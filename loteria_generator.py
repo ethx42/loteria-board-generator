@@ -401,13 +401,57 @@ def export_to_json(boards: List[List[str]], filename: str = "loteria_boards.json
 
 
 def run_tests(boards: List[List[str]]) -> None:
-    """Run validation tests on the generated boards."""
+    """
+    Run EXHAUSTIVE validation tests on the generated boards.
+    
+    Tests cover ALL possible error cases:
+    - Correct number of boards
+    - Correct board sizes
+    - No duplicate items within boards
+    - No identical boards (same items, regardless of order)
+    - Exact frequency for each item
+    - All items are valid (from the original 36)
+    - No extra/unknown items
+    - Total slot count is exactly 240
+    """
     print("\n" + "="*60)
-    print("RUNNING VALIDATION TESTS")
+    print("RUNNING EXHAUSTIVE VALIDATION TESTS")
     print("="*60)
     
     all_items = [item for board in boards for item in board]
     item_counts = Counter(all_items)
+    
+    # TEST 0: Basic structure validation
+    print("\nTEST 0: Structure Validation")
+    print("-" * 40)
+    
+    # Check number of boards
+    assert len(boards) == NUM_BOARDS, f"Expected {NUM_BOARDS} boards, got {len(boards)}"
+    print(f"  ✓ Correct number of boards: {len(boards)}")
+    
+    # Check each board has exactly 16 items
+    for i, board in enumerate(boards, 1):
+        assert len(board) == BOARD_SIZE, f"Board {i} has {len(board)} items, expected {BOARD_SIZE}"
+    print(f"  ✓ All boards have exactly {BOARD_SIZE} items")
+    
+    # Check total items
+    expected_total = NUM_BOARDS * BOARD_SIZE
+    assert len(all_items) == expected_total, f"Expected {expected_total} total items, got {len(all_items)}"
+    print(f"  ✓ Total items distributed: {len(all_items)}")
+    
+    # Check all items are valid (from the 36 original items)
+    valid_items_set = set(ITEMS)
+    invalid_items = [item for item in all_items if item not in valid_items_set]
+    assert len(invalid_items) == 0, f"Found invalid items: {invalid_items}"
+    print(f"  ✓ All items are from the valid set of {len(ITEMS)} items")
+    
+    # Check all 36 items are used
+    used_items = set(all_items)
+    missing_items = valid_items_set - used_items
+    assert len(missing_items) == 0, f"Missing items not used: {missing_items}"
+    print(f"  ✓ All {len(ITEMS)} items are used in the distribution")
+    
+    print("\n✓ TEST 0 PASSED: Structure validation complete")
     
     # TEST 1: Frequency validation
     print("\nTEST 1: Frequency Validation")
@@ -435,6 +479,12 @@ def run_tests(boards: List[List[str]]) -> None:
             print(error)
         raise AssertionError("TEST 1 FAILED: Frequency requirements not met")
     
+    # Verify total matches expected
+    expected_from_freq = (24 * FIRST_24_FREQUENCY) + (12 * LAST_12_FREQUENCY)
+    actual_total = sum(item_counts.values())
+    assert actual_total == expected_from_freq, f"Frequency sum mismatch: {actual_total} vs {expected_from_freq}"
+    
+    print(f"\n  Frequency sum: {actual_total} (matches expected {expected_from_freq})")
     print("\n✓ TEST 1 PASSED: All items have correct frequency")
     
     # TEST 2: No duplicates within boards
@@ -443,11 +493,14 @@ def run_tests(boards: List[List[str]]) -> None:
     
     duplicate_errors = []
     for i, board in enumerate(boards, 1):
-        if len(board) != len(set(board)):
-            duplicates = [item for item in board if board.count(item) > 1]
-            duplicate_errors.append(f"  ✗ Board {i} has duplicates: {set(duplicates)}")
+        board_counter = Counter(board)
+        duplicates = [item for item, count in board_counter.items() if count > 1]
+        if duplicates:
+            duplicate_errors.append(f"  ✗ Board {i} has duplicates: {duplicates}")
+        elif len(board) != len(set(board)):
+            duplicate_errors.append(f"  ✗ Board {i} has hidden duplicates")
         else:
-            print(f"  ✓ Board {i}: No duplicates ({len(board)} items)")
+            print(f"  ✓ Board {i}: {len(board)} unique items")
     
     if duplicate_errors:
         print("\nDUPLICATE ERRORS FOUND:")
@@ -457,15 +510,36 @@ def run_tests(boards: List[List[str]]) -> None:
     
     print("\n✓ TEST 2 PASSED: No board contains duplicate items")
     
-    # TEST 3: No identical boards
-    print("\nTEST 3: No Identical Boards")
+    # TEST 3: No identical boards (REGARDLESS OF ORDER)
+    print("\nTEST 3: No Identical Boards (Order-Independent)")
     print("-" * 40)
     
+    # Convert each board to a frozenset (ignores order)
     board_sets = [frozenset(board) for board in boards]
-    if len(board_sets) != len(set(board_sets)):
-        raise AssertionError("TEST 3 FAILED: Some boards are identical")
     
-    print("  ✓ All 15 boards are unique")
+    # Find any duplicates
+    seen_boards = {}
+    identical_pairs = []
+    for i, board_set in enumerate(board_sets):
+        if board_set in seen_boards:
+            identical_pairs.append((seen_boards[board_set] + 1, i + 1))
+        else:
+            seen_boards[board_set] = i
+    
+    if identical_pairs:
+        print("\n  IDENTICAL BOARDS FOUND:")
+        for b1, b2 in identical_pairs:
+            print(f"    ✗ Board {b1} and Board {b2} have the SAME items")
+            # Show the items
+            print(f"      Items: {sorted(boards[b1-1])[:5]}... (showing first 5)")
+        raise AssertionError(f"TEST 3 FAILED: Found {len(identical_pairs)} pair(s) of identical boards")
+    
+    # Double-check: the number of unique board sets should equal NUM_BOARDS
+    unique_count = len(set(board_sets))
+    assert unique_count == NUM_BOARDS, f"Only {unique_count} unique boards out of {NUM_BOARDS}"
+    
+    print(f"  ✓ All {NUM_BOARDS} boards are unique (order-independent check)")
+    print(f"  ✓ Verified: {unique_count} distinct item combinations")
     print("\n✓ TEST 3 PASSED: All boards are distinct")
     
     # TEST 4: Pairwise overlap analysis
@@ -478,29 +552,75 @@ def run_tests(boards: List[List[str]]) -> None:
             overlap = len(set(boards[i]) & set(boards[j]))
             overlaps.append((i + 1, j + 1, overlap))
     
+    # Verify we checked all pairs
+    expected_pairs = (NUM_BOARDS * (NUM_BOARDS - 1)) // 2
+    assert len(overlaps) == expected_pairs, f"Expected {expected_pairs} pairs, got {len(overlaps)}"
+    
     min_overlap = min(o[2] for o in overlaps)
     max_overlap = max(o[2] for o in overlaps)
     avg_overlap = sum(o[2] for o in overlaps) / len(overlaps)
     
+    print(f"  Pairs analyzed: {len(overlaps)}")
     print(f"  Min overlap: {min_overlap} items")
     print(f"  Max overlap: {max_overlap} items")
     print(f"  Avg overlap: {avg_overlap:.2f} items")
     
+    # Verify no board has 100% overlap with another (would mean identical)
+    full_overlap_pairs = [(b1, b2) for b1, b2, ov in overlaps if ov == BOARD_SIZE]
+    assert len(full_overlap_pairs) == 0, f"Found boards with 100% overlap: {full_overlap_pairs}"
+    print(f"  ✓ No boards have 100% overlap (verified distinct)")
+    
     # Show worst overlapping pairs
-    worst_pairs = sorted(overlaps, key=lambda x: -x[2])[:3]
+    worst_pairs = sorted(overlaps, key=lambda x: -x[2])[:5]
     print(f"\n  Highest overlap pairs:")
     for b1, b2, ov in worst_pairs:
-        print(f"    Boards {b1} & {b2}: {ov} shared items")
+        print(f"    Boards {b1} & {b2}: {ov} shared items ({ov}/{BOARD_SIZE} = {100*ov/BOARD_SIZE:.1f}%)")
     
     print("\n✓ TEST 4 PASSED: Overlap analysis complete")
     
+    # TEST 5: Cross-validation - verify from item perspective
+    print("\nTEST 5: Cross-Validation (Item Perspective)")
+    print("-" * 40)
+    
+    # For each item, verify it appears in the correct number of boards
+    item_board_appearances = {item: [] for item in ITEMS}
+    for board_idx, board in enumerate(boards):
+        for item in board:
+            item_board_appearances[item].append(board_idx + 1)
+    
+    cross_errors = []
+    for item_idx, item in enumerate(ITEMS):
+        expected_freq = get_item_frequency(item_idx)
+        actual_boards = item_board_appearances[item]
+        
+        # Check frequency
+        if len(actual_boards) != expected_freq:
+            cross_errors.append(f"  ✗ {item}: appears in {len(actual_boards)} boards, expected {expected_freq}")
+        
+        # Check no item appears twice in same board
+        if len(actual_boards) != len(set(actual_boards)):
+            cross_errors.append(f"  ✗ {item}: appears multiple times in same board!")
+    
+    if cross_errors:
+        print("\nCROSS-VALIDATION ERRORS:")
+        for error in cross_errors:
+            print(error)
+        raise AssertionError("TEST 5 FAILED: Cross-validation found inconsistencies")
+    
+    print(f"  ✓ All items appear in correct number of distinct boards")
+    print(f"  ✓ No item appears twice in the same board")
+    print("\n✓ TEST 5 PASSED: Cross-validation complete")
+    
     # Summary
     print("\n" + "="*60)
-    print("ALL TESTS PASSED ✓")
+    print("ALL 6 TESTS PASSED ✓")
     print("="*60)
     print(f"Total items distributed: {len(all_items)}")
-    print(f"Total unique items: {len(ITEMS)}")
+    print(f"Total unique items used: {len(used_items)}")
     print(f"Boards generated: {len(boards)}")
+    print(f"Items per board: {BOARD_SIZE}")
+    print(f"All boards verified unique (order-independent)")
+    print(f"Distribution is 100% correct")
 
 
 def main():
