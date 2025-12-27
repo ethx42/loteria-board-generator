@@ -62,6 +62,8 @@ export interface GeneratorConfig {
   numBoards: number;
   boardConfig: BoardConfig;
   distribution: DistributionStrategy;
+  /** Optional seed for reproducible generation */
+  seed?: number;
 }
 
 /** Default Lotería items (Barranquilla edition) */
@@ -141,8 +143,10 @@ export interface GenerationStats {
   maxOverlap: number;
   avgOverlap: number;
   generationTimeMs: number;
-  solverUsed: "ilp" | "greedy";
-  frequencies: Map<string, number>;
+  solverUsed: "highs" | "greedy";
+  frequencies: Record<string, number>;
+  /** Seed used for this generation (save to reproduce) */
+  seedUsed: number;
 }
 
 /** Complete generation result */
@@ -167,7 +171,8 @@ export type ConstraintType =
   | "MIN_FREQUENCY"
   | "MAX_FREQUENCY"
   | "FEASIBILITY"
-  | "UNIQUE_BOARDS";
+  | "UNIQUE_BOARDS"
+  | "OVERLAP_QUALITY";
 
 /** Single constraint validation result */
 export interface ConstraintValidation {
@@ -214,38 +219,9 @@ export interface WizardState {
 }
 
 // ============================================================================
-// GAME TYPES
+// GAME TYPES (Phase 3 - To be implemented)
 // ============================================================================
-
-/** Win pattern types */
-export type WinPattern =
-  | "full" // All items marked
-  | "row" // Any complete row
-  | "column" // Any complete column
-  | "diagonal" // Main or anti-diagonal
-  | "corners"; // 4 corners
-
-/** Player in the game */
-export interface Player {
-  id: string;
-  name: string;
-  board: GeneratedBoard;
-  markedItems: Set<string>;
-}
-
-/** Game state */
-export interface GameState {
-  id: string;
-  boards: GeneratedBoard[];
-  players: Player[];
-  calledItems: Item[];
-  remainingItems: Item[];
-  currentItem: Item | null;
-  winPattern: WinPattern;
-  winner: Player | null;
-  isActive: boolean;
-  startedAt: Date | null;
-}
+// Game types will be added when implementing the game play functionality
 
 // ============================================================================
 // PARSER TYPES

@@ -35,7 +35,7 @@ export function binomial(n: number, k: number): number {
 /**
  * Format large numbers with appropriate suffix
  */
-export function formatNumber(n: number): string {
+function formatNumber(n: number): string {
   if (n >= 1e12) return `${(n / 1e12).toFixed(1)}T`;
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
@@ -278,42 +278,90 @@ export function validateConstraints(
 
   // 6. UNIQUE_BOARDS: C(N, S) ≥ B
   const uniqueBoardsValid = c.possibleUniqueBoards >= c.B;
+  
+  // Generate helpful suggestions when invalid
+  let uniqueBoardsMessage: string;
+  if (uniqueBoardsValid) {
+    uniqueBoardsMessage = `${formatNumber(c.possibleUniqueBoards)} possible boards ≥ ${c.B} required`;
+  } else {
+    const suggestions: string[] = [];
+    
+    // Suggestion 1: Add more items
+    // Find minimum items needed for C(N, S) >= B
+    let minItemsNeeded = c.N;
+    while (binomial(minItemsNeeded, c.S) < c.B && minItemsNeeded < c.S * 3) {
+      minItemsNeeded++;
+    }
+    if (minItemsNeeded > c.N && binomial(minItemsNeeded, c.S) >= c.B) {
+      suggestions.push(`add ${minItemsNeeded - c.N} more items (${minItemsNeeded} total)`);
+    }
+    
+    // Suggestion 2: Reduce board size
+    let smallerBoardSize = c.S - 1;
+    while (smallerBoardSize > 0 && binomial(c.N, smallerBoardSize) < c.B) {
+      smallerBoardSize--;
+    }
+    if (smallerBoardSize > 0 && smallerBoardSize < c.S) {
+      const rows = Math.floor(Math.sqrt(smallerBoardSize));
+      const cols = Math.ceil(smallerBoardSize / rows);
+      suggestions.push(`use smaller boards (${rows}×${cols} = ${smallerBoardSize} slots)`);
+    }
+    
+    // Suggestion 3: Reduce number of boards
+    if (c.possibleUniqueBoards > 0) {
+      suggestions.push(`reduce to ${c.possibleUniqueBoards} boards`);
+    }
+    
+    const suggestionText = suggestions.length > 0 
+      ? ` Try: ${suggestions.join(", or ")}.`
+      : "";
+    
+    uniqueBoardsMessage = `Only ${formatNumber(c.possibleUniqueBoards)} possible unique boards, need ${c.B}.${suggestionText}`;
+  }
+  
   validations.push({
     isValid: uniqueBoardsValid,
     constraint: "UNIQUE_BOARDS",
-    message: uniqueBoardsValid
-      ? `${formatNumber(c.possibleUniqueBoards)} possible boards ≥ ${c.B} required`
-      : `Only ${formatNumber(c.possibleUniqueBoards)} possible boards, need ${c.B}`,
+    message: uniqueBoardsMessage,
     severity: uniqueBoardsValid ? "info" : "error",
     details: { expected: c.B, actual: c.possibleUniqueBoards },
+  });
+
+  // 7. OVERLAP_QUALITY: Check if boards will be too similar
+  // Minimum overlap = max(0, 2×S - N)
+  // If min overlap > 20% of board size, warn user
+  const minTheoreticalOverlap = Math.max(0, 2 * c.S - c.N);
+  const overlapRatio = minTheoreticalOverlap / c.S;
+  const poolUsageRatio = c.S / c.N; // What fraction of the pool each board uses
+  
+  // Boards are too similar if:
+  // - Min overlap > 20% of board size, OR
+  // - Each board uses > 50% of the pool
+  const overlapThreshold = 0.2;
+  const poolUsageThreshold = 0.5;
+  const overlapQualityGood = overlapRatio <= overlapThreshold && poolUsageRatio <= poolUsageThreshold;
+  
+  let overlapMessage: string;
+  if (overlapQualityGood) {
+    overlapMessage = `Good diversity: boards use ${Math.round(poolUsageRatio * 100)}% of item pool`;
+  } else if (minTheoreticalOverlap > 0) {
+    overlapMessage = `⚠️ Low diversity: any two boards share at least ${minTheoreticalOverlap} items (${Math.round(overlapRatio * 100)}% overlap). Add more items or reduce board size.`;
+  } else {
+    overlapMessage = `⚠️ Low diversity: each board uses ${Math.round(poolUsageRatio * 100)}% of all items. Add more items for varied boards.`;
+  }
+  
+  validations.push({
+    isValid: overlapQualityGood,
+    constraint: "OVERLAP_QUALITY",
+    message: overlapMessage,
+    severity: overlapQualityGood ? "info" : "warning",
+    details: { 
+      expected: Math.round(overlapThreshold * c.S), 
+      actual: minTheoreticalOverlap 
+    },
   });
 
   return validations;
 }
 
-/**
- * Check if all constraints are satisfied
- */
-export function isConfigValid(config: GeneratorConfig): boolean {
-  const validations = validateConstraints(config);
-  return validations.every((v) => v.isValid);
-}
-
-/**
- * Get only error validations
- */
-export function getErrors(
-  validations: ConstraintValidation[]
-): ConstraintValidation[] {
-  return validations.filter((v) => !v.isValid && v.severity === "error");
-}
-
-/**
- * Get only warning validations
- */
-export function getWarnings(
-  validations: ConstraintValidation[]
-): ConstraintValidation[] {
-  return validations.filter((v) => !v.isValid && v.severity === "warning");
-}
 
