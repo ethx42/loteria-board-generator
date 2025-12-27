@@ -242,34 +242,3 @@ export function itemsToText(items: string[]): string {
 
   return items.join("\n");
 }
-
-/**
- * Validate items meet minimum requirements
- */
-export function validateItems(
-  items: string[],
-  minCount: number = 1
-): { valid: boolean; error?: string } {
-  if (items.length === 0) {
-    return { valid: false, error: "No items provided" };
-  }
-
-  if (items.length < minCount) {
-    return {
-      valid: false,
-      error: `Need at least ${minCount} items, got ${items.length}`,
-    };
-  }
-
-  // Check for very short items
-  const shortItems = items.filter((item) => item.length < 2);
-  if (shortItems.length > 0) {
-    return {
-      valid: false,
-      error: `Some items are too short: ${shortItems.join(", ")}`,
-    };
-  }
-
-  return { valid: true };
-}
-
