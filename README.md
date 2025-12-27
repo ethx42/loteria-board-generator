@@ -1,129 +1,70 @@
-# Lotería Game Board Generator
+# 🎴 Lotería Game
 
-A Python script that generates 15 unique game boards for a Colombian-themed Lotería game with balanced item distribution.
-
-## Project Description
-
-This generator creates 15 distinct 4x4 game boards from 36 unique Colombian cultural items, ensuring:
-- Balanced distribution across all boards
-- No duplicate items within a single board
-- Mathematical validation of distribution requirements
-
-## Algorithm
-
-The generator uses a **Spread Distribution algorithm** with the following strategy:
-
-1. **Greedy Assignment**: Items are assigned to boards one at a time
-2. **Overlap Minimization**: Prefers boards that minimize maximum pairwise overlap
-3. **Duplicate Repair**: Detects and fixes any duplicate boards via swapping
-4. **Frequency Constraints**: Maintains exact frequency requirements
-
-If OR-Tools is available (requires Python ≤ 3.12), the generator uses a **CP-SAT constraint solver** that optimally minimizes the maximum overlap between any two boards.
+A modern web application for creating and playing the traditional Lotería game with optimally distributed game boards.
 
 ## Features
 
-- **36 Unique Items**: Colombian food, culture, landmarks, and traditions
-- **15 Game Boards**: Each with a 4x4 grid (16 items)
-- **Balanced Distribution**: 
-  - Items 1-24: appear 7 times across all boards
-  - Items 25-36: appear 6 times across all boards
-- **Automatic Validation**: Four comprehensive tests ensure correctness
-- **JSON Export**: Boards exported in structured format for easy integration
-- **Deterministic**: Same output every time (no random shuffling)
+- **Board Generator**: Create custom game boards with mathematical optimization
+  - Configurable items, board size, and quantity
+  - HiGHS solver for optimal diversity (minimal overlap between boards)
+  - Real-time constraint validation
+  - Multiple export formats (JSON, CSV, Print)
 
-## Requirements
+- **Game Mode** (Coming Soon): Play Lotería with friends
+  - Real-time card calling
+  - Player board tracking
+  - Winner detection
 
-- Python 3.6 or higher
-- Standard library only (no external dependencies required)
+## Tech Stack
 
-### Optional (for optimal diversity)
+- **Framework**: Next.js 16 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Optimization**: HiGHS Solver (WebAssembly)
+- **Animation**: Framer Motion
+- **State**: Zustand
 
-```bash
-# Requires Python <= 3.12
-pip install ortools>=9.8.0
-```
-
-## Usage
-
-Run the script:
+## Getting Started
 
 ```bash
-python3 loteria_generator.py
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Open http://localhost:3000
 ```
 
-Or with a virtual environment:
+## Mathematical Constraints
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-python loteria_generator.py
-```
+The board generator ensures optimal distribution through these constraints:
 
-## Output
+| Constraint | Formula | Description |
+|------------|---------|-------------|
+| Slot Balance | ∑fᵢ = B × S | Sum of frequencies equals total slots |
+| Min Items | N ≥ S | Enough items to fill a board |
+| Min Frequency | fᵢ ≥ 1 | Every item appears at least once |
+| Max Frequency | fᵢ ≤ B | No item exceeds board count |
+| Feasibility | N ≤ T ≤ N×B | Total slots within feasible range |
+| Uniqueness | C(N,S) ≥ B | Enough combinations for unique boards |
 
-The script will:
-
-1. Generate 15 unique boards
-2. Print all boards to the console in a readable format
-3. Export boards to `loteria_boards.json`
-4. Run validation tests and display results
-
-## Validation Tests
-
-The script automatically runs four tests:
-
-### Test 1: Frequency Validation
-Verifies that each item appears the correct number of times:
-- Items 01-24: exactly 7 occurrences
-- Items 25-36: exactly 6 occurrences
-
-### Test 2: No Duplicates Within Boards
-Ensures each board contains 16 unique items (no duplicates)
-
-### Test 3: No Identical Boards
-Confirms all 15 boards are distinct from each other
-
-### Test 4: Pairwise Overlap Analysis
-Analyzes how many items are shared between pairs of boards:
-- Reports min, max, and average overlap
-- Shows the highest-overlap board pairs
-
-## JSON Output Format
-
-```json
-{
-  "game": "Lotería Barranquilla",
-  "total_boards": 15,
-  "board_size": "4x4",
-  "items_per_board": 16,
-  "algorithm": "Spread Distribution",
-  "boards": [
-    {
-      "board_number": 1,
-      "items": [...],
-      "grid": [[...], [...], [...], [...]]
-    }
-  ]
-}
-```
-
-## The 36 Items
-
-Traditional Colombian foods, cultural icons, and landmarks including:
-- Patacón de Guineo Verde
-- La Marimonda
-- La Palenquera
-- Alejandro Obregón
-- Bocas de Ceniza
-- And 31 more unique items
-
-## Mathematical Verification
+## Project Structure
 
 ```
-(24 items × 7 occurrences) + (12 items × 6 occurrences) = 240 slots
-15 boards × 16 items per board = 240 slots ✓
+src/
+├── app/
+│   ├── generator/     # Board generation wizard
+│   └── play/          # Game mode (coming soon)
+├── components/ui/     # shadcn components
+├── lib/
+│   ├── types/         # TypeScript interfaces
+│   ├── constraints/   # Validation engine
+│   ├── solver/        # HiGHS & greedy algorithms
+│   └── parser/        # Text parsing utilities
+└── stores/            # Zustand state management
 ```
 
 ## License
 
-This project is open source and available for personal and commercial use.
+MIT

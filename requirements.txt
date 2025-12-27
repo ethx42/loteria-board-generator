@@ -1,5 +1,0 @@
-# Core algorithm works without dependencies
-# OR-Tools is optional for advanced diversity optimization
-
-# Optional (requires Python <= 3.12):
-# ortools>=9.8.0
