@@ -21,7 +21,6 @@ import {
   DEFAULT_NUM_BOARDS,
 } from "@/lib/types";
 import { validateConstraints } from "@/lib/constraints/engine";
-import { generateBoardsServer } from "@/lib/solver/server-solver";
 
 interface GeneratorStore extends WizardState {
   // Navigation
@@ -37,6 +36,7 @@ interface GeneratorStore extends WizardState {
   setBoardConfig: (config: BoardConfig) => void;
   setNumBoards: (num: number) => void;
   setDistribution: (strategy: DistributionStrategy) => void;
+  setSeed: (seed: number | undefined) => void;
 
   // Generation
   generate: () => Promise<void>;
@@ -177,7 +177,14 @@ export const useGeneratorStore = create<GeneratorStore>((set, get) => ({
     });
   },
 
-  // Generation - Uses server action with HiGHS ILP solver
+  setSeed: (seed) => {
+    set((state) => ({
+      config: { ...state.config, seed },
+      result: null, // Invalidate previous result when seed changes
+    }));
+  },
+
+  // Generation - Uses API route with HiGHS ILP solver
   generate: async () => {
     const { config, isGenerating } = get();
 
@@ -186,8 +193,18 @@ export const useGeneratorStore = create<GeneratorStore>((set, get) => ({
     set({ isGenerating: true, error: null });
 
     try {
-      // Use server action for HiGHS solver (runs on server)
-      const result = await generateBoardsServer(config);
+      // Call API route for HiGHS solver (runs on server with Node.js runtime)
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result: GenerationResult = await response.json();
 
       if (result.success) {
         set({ result, isGenerating: false });

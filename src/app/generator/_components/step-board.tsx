@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, LayoutGrid, Hash } from "lucide-react";
+import { Grid3X3, LayoutGrid, Hash, Key, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useGeneratorStore, useConfig } from "@/stores/generator-store";
 import { cn } from "@/lib/utils";
 import { getBoardSize } from "@/lib/types";
@@ -24,7 +24,8 @@ const presets: Preset[] = [
 
 export function StepBoard() {
   const config = useConfig();
-  const { setBoardConfig, setNumBoards } = useGeneratorStore();
+  const { setBoardConfig, setNumBoards, setSeed } = useGeneratorStore();
+  const [showAdvanced, setShowAdvanced] = useState(config.seed !== undefined);
 
   const boardSize = getBoardSize(config.boardConfig);
   const totalSlots = config.numBoards * boardSize;
@@ -174,6 +175,64 @@ export function StepBoard() {
         </div>
       </div>
 
+      {/* Advanced Options */}
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-amber-600 hover:text-amber-800 text-sm transition-colors"
+        >
+          {showAdvanced ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+          Advanced Options
+        </button>
+
+        {showAdvanced && (
+          <div className="bg-amber-50/50 rounded-lg p-4 border border-amber-100 space-y-3">
+            <Label className="text-amber-800 font-medium flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              Reproducibility Seed
+              <span className="text-xs font-normal text-amber-500">(optional)</span>
+            </Label>
+            <p className="text-xs text-amber-600">
+              Enter a seed to reproduce the exact same boards. Leave empty for random generation.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                placeholder="e.g. 847291"
+                value={config.seed ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    setSeed(undefined);
+                  } else {
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num > 0) {
+                      setSeed(num);
+                    }
+                  }
+                }}
+                className="border-amber-200 focus:border-amber-400 font-mono max-w-xs"
+              />
+              {config.seed !== undefined && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSeed(undefined)}
+                  className="text-amber-500 hover:text-amber-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Summary */}
       <div className="bg-gradient-to-r from-amber-100/80 to-orange-100/80 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-amber-800">
@@ -201,6 +260,14 @@ export function StepBoard() {
             <span className="text-amber-600">Total slots:</span>
             <span className="ml-2 font-medium text-amber-900">{totalSlots}</span>
           </div>
+          {config.seed !== undefined && (
+            <div className="col-span-2">
+              <span className="text-amber-600">Seed:</span>
+              <code className="ml-2 font-mono font-medium text-amber-900">
+                {config.seed}
+              </code>
+            </div>
+          )}
         </div>
       </div>
     </div>

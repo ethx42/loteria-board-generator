@@ -13,6 +13,9 @@ import {
   ChevronRight,
   AlertCircle,
   BarChart3,
+  Key,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useResult, useGeneratorStore, useError } from "@/stores/generator-store";
 import { cn } from "@/lib/utils";
@@ -72,7 +75,7 @@ export function StepPreview() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard
           icon={Clock}
           label="Time"
@@ -81,7 +84,7 @@ export function StepPreview() {
         <StatCard
           icon={Zap}
           label="Solver"
-          value={stats.solverUsed === "ilp" ? "ILP (Optimal)" : "Greedy + Hill Climbing"}
+          value={stats.solverUsed === "highs" ? "HiGHS (Optimal)" : "Greedy"}
         />
         <StatCard
           icon={BarChart3}
@@ -93,6 +96,7 @@ export function StepPreview() {
           label="Avg Overlap"
           value={`${stats.avgOverlap.toFixed(1)} items`}
         />
+        <SeedCard seed={stats.seedUsed} />
       </div>
 
       {/* Board Grid */}
@@ -167,6 +171,53 @@ function StatCard({
   );
 }
 
+function SeedCard({ seed }: { seed: number }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(seed.toString());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = seed.toString();
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-100">
+      <div className="flex items-center gap-1.5 text-amber-600 mb-1">
+        <Key className="w-3.5 h-3.5" />
+        <span className="text-xs">Seed</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <code className="text-sm font-mono font-medium text-amber-900">
+          {seed}
+        </code>
+        <button
+          onClick={handleCopy}
+          className="text-amber-500 hover:text-amber-700 transition-colors"
+          title="Copy seed to clipboard"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-green-600" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BoardCard({ board, index }: { board: GeneratedBoard; index: number }) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -207,7 +258,7 @@ function BoardCard({ board, index }: { board: GeneratedBoard; index: number }) {
           {board.grid.flat().map((item, i) => (
             <div
               key={i}
-              className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 rounded-sm flex items-center justify-center text-[8px] text-amber-700 font-medium p-0.5 text-center leading-tight border border-amber-100/50"
+              className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 rounded-sm flex items-center justify-center text-[11px] text-amber-700 font-medium p-0.5 text-center leading-tight border border-amber-100/50"
               title={item.name}
             >
               {item.id}
