@@ -81,7 +81,7 @@ export function StepPreview() {
         <StatCard
           icon={Zap}
           label="Solver"
-          value={stats.solverUsed === "highs" ? "HiGHS (Optimal)" : "Greedy"}
+          value={stats.solverUsed === "ilp" ? "ILP (Optimal)" : "Greedy + Hill Climbing"}
         />
         <StatCard
           icon={BarChart3}

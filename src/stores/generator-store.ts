@@ -21,7 +21,7 @@ import {
   DEFAULT_NUM_BOARDS,
 } from "@/lib/types";
 import { validateConstraints } from "@/lib/constraints/engine";
-import { generateBoards } from "@/lib/solver";
+import { generateBoardsServer } from "@/lib/solver/server-solver";
 
 interface GeneratorStore extends WizardState {
   // Navigation
@@ -177,7 +177,7 @@ export const useGeneratorStore = create<GeneratorStore>((set, get) => ({
     });
   },
 
-  // Generation
+  // Generation - Uses server action with HiGHS ILP solver
   generate: async () => {
     const { config, isGenerating } = get();
 
@@ -186,7 +186,8 @@ export const useGeneratorStore = create<GeneratorStore>((set, get) => ({
     set({ isGenerating: true, error: null });
 
     try {
-      const result = await generateBoards(config);
+      // Use server action for HiGHS solver (runs on server)
+      const result = await generateBoardsServer(config);
 
       if (result.success) {
         set({ result, isGenerating: false });

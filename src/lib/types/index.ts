@@ -141,7 +141,7 @@ export interface GenerationStats {
   maxOverlap: number;
   avgOverlap: number;
   generationTimeMs: number;
-  solverUsed: "highs" | "greedy";
+  solverUsed: "ilp" | "greedy";
   frequencies: Map<string, number>;
 }
 
