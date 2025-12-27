@@ -12,7 +12,7 @@ A modern, enterprise-grade web application for generating **optimally distribute
 
 ## 🌟 What is Lotería?
 
-[Lotería](https://en.wikipedia.org/wiki/Loter%C3%ADa) is a traditional Mexican game of chance, similar to bingo. Players mark images on their boards as a caller announces cards. The challenge? **Creating fair, diverse boards** where no two players have nearly identical cards.
+Lotería is a traditional game of chance, similar to bingo. Players mark images on their boards as a caller announces cards. The challenge? **Creating fair, diverse boards** where no two players have nearly identical cards.
 
 This application solves that problem using **Integer Linear Programming (ILP)** to generate boards with mathematically optimal distribution.
 
@@ -21,20 +21,24 @@ This application solves that problem using **Integer Linear Programming (ILP)** 
 ## ✨ Key Features
 
 ### 🎯 Smart Board Generation
+
 - **Wizard-style interface** — Step-by-step configuration for items, board size, and quantity
 - **Real-time validation** — Instant feedback on configuration constraints
 - **Intelligent suggestions** — When a configuration is invalid, the system tells you exactly how to fix it
 
 ### 🧮 Mathematical Optimization
+
 - **HiGHS ILP Solver** — Industrial-strength optimization engine (same solver used by Google OR-Tools)
 - **Overlap minimization** — Boards are generated to be as different as possible
 - **Fisher-Yates shuffle** — Items are randomly distributed within each board for visual variety
 
 ### 🔐 Reproducibility
+
 - **Optional seed** — Generate the same boards every time with a custom seed
 - **Deterministic output** — Same configuration + same seed = identical results
 
 ### 📊 Export Options
+
 - **JSON** — For integration with other systems
 - **CSV** — For spreadsheets and printing
 - **Print-ready** — Optimized layout for physical boards
@@ -44,7 +48,8 @@ This application solves that problem using **Integer Linear Programming (ILP)** 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm, pnpm, or yarn
 
 ### Installation
@@ -84,6 +89,7 @@ npm run test:watch
 ### The Problem
 
 Imagine you need 50 game boards, each with 16 items selected from a pool of 36. How do you ensure:
+
 1. Every board is **unique**?
 2. No two boards are **too similar**?
 3. All items appear with **fair frequency**?
@@ -111,24 +117,24 @@ The HiGHS solver finds the optimal solution in seconds.
 
 The generator enforces these constraints in real-time:
 
-| Constraint | Formula | Plain English |
-|------------|---------|---------------|
-| **Slot Balance** | `∑fᵢ = B × S` | Total item appearances = boards × items per board |
-| **Minimum Items** | `N ≥ S` | You need at least as many items as board slots |
-| **Minimum Frequency** | `fᵢ ≥ 1` | Every item appears at least once |
-| **Maximum Frequency** | `fᵢ ≤ B` | No item appears more than once per board |
-| **Feasibility** | `N ≤ T ≤ N×B` | Total slots are within mathematical bounds |
-| **Uniqueness** | `C(N,S) ≥ B` | Enough combinations exist for unique boards |
-| **Overlap Quality** | `S/N ≤ 50%` | Boards don't use too much of the item pool |
+| Constraint            | Formula       | Plain English                                     |
+| --------------------- | ------------- | ------------------------------------------------- |
+| **Slot Balance**      | `∑fᵢ = B × S` | Total item appearances = boards × items per board |
+| **Minimum Items**     | `N ≥ S`       | You need at least as many items as board slots    |
+| **Minimum Frequency** | `fᵢ ≥ 1`      | Every item appears at least once                  |
+| **Maximum Frequency** | `fᵢ ≤ B`      | No item appears more than once per board          |
+| **Feasibility**       | `N ≤ T ≤ N×B` | Total slots are within mathematical bounds        |
+| **Uniqueness**        | `C(N,S) ≥ B`  | Enough combinations exist for unique boards       |
+| **Overlap Quality**   | `S/N ≤ 50%`   | Boards don't use too much of the item pool        |
 
 ### Smart Error Messages
 
 When a configuration is invalid, you get actionable suggestions:
 
 ```
-❌ Only 1 possible unique boards, need 100. 
-   Try: add 2 more items (18 total), 
-        or use smaller boards (3×5 = 14 slots), 
+❌ Only 1 possible unique boards, need 100.
+   Try: add 2 more items (18 total),
+        or use smaller boards (3×5 = 14 slots),
         or reduce to 1 boards.
 ```
 
@@ -157,17 +163,17 @@ src/
 
 ### Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Framework** | Next.js 16 (App Router) | Server-side rendering, API routes |
-| **UI** | React 19 | Component architecture |
-| **Styling** | Tailwind CSS 4 | Utility-first CSS |
-| **Components** | shadcn/ui + Radix | Accessible, customizable primitives |
-| **State** | Zustand | Lightweight state management |
-| **Optimization** | HiGHS (WebAssembly) | Industrial ILP solver |
-| **Animation** | Framer Motion | Smooth transitions |
-| **Validation** | Zod | Runtime type checking |
-| **Testing** | Vitest | Fast unit testing |
+| Layer            | Technology              | Purpose                             |
+| ---------------- | ----------------------- | ----------------------------------- |
+| **Framework**    | Next.js 16 (App Router) | Server-side rendering, API routes   |
+| **UI**           | React 19                | Component architecture              |
+| **Styling**      | Tailwind CSS 4          | Utility-first CSS                   |
+| **Components**   | shadcn/ui + Radix       | Accessible, customizable primitives |
+| **State**        | Zustand                 | Lightweight state management        |
+| **Optimization** | HiGHS (WebAssembly)     | Industrial ILP solver               |
+| **Animation**    | Framer Motion           | Smooth transitions                  |
+| **Validation**   | Zod                     | Runtime type checking               |
+| **Testing**      | Vitest                  | Fast unit testing                   |
 
 ---
 
@@ -176,18 +182,21 @@ src/
 The solver is thoroughly tested with **59 tests** covering:
 
 ### Core Functionality
+
 - ✅ Correct board dimensions
 - ✅ No duplicate items within boards
 - ✅ No identical boards (order-independent)
 - ✅ Correct item frequencies
 
 ### Diversity & Quality
+
 - ✅ Pairwise overlap analysis
 - ✅ Jaccard similarity bounds
 - ✅ Visual distribution (shuffled items)
 - ✅ Co-occurrence matrices
 
 ### Edge Cases
+
 - ✅ Pigeonhole principle scenarios
 - ✅ Impossible configurations (graceful failure)
 - ✅ Determinism with seeds
