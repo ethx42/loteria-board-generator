@@ -166,7 +166,6 @@ function JoinPageContent() {
   // WebSocket connection
   const {
     status: connectionStatus,
-    hostConnected,
     lastStateUpdate,
     connect,
     disconnect,
@@ -180,19 +179,12 @@ function JoinPageContent() {
     debug: true,
   });
 
-  // Auto-connect when we have a room from URL
-  useEffect(() => {
-    if (roomFromUrl && !hasAutoConnected.current) {
-      hasAutoConnected.current = true;
-      connect();
-    }
-  }, [roomFromUrl, connect]);
-
   // Handle connection status changes
   useEffect(() => {
     if (state.status !== "connecting") return;
 
-    if (connectionStatus === "connected" && hostConnected) {
+    // Show controller UI as soon as WebSocket is connected
+    if (connectionStatus === "connected") {
       setState({
         status: "connected",
         roomId: state.roomId,
@@ -206,17 +198,15 @@ function JoinPageContent() {
       });
     } else if (connectionStatus === "disconnected") {
       const timeout = setTimeout(() => {
-        if (connectionStatus === "disconnected") {
-          setState({
-            status: "error",
-            message: "Could not connect to room. Please check the code.",
-            roomId: state.roomId,
-          });
-        }
-      }, 3000);
+        setState({
+          status: "error",
+          message: "Could not connect to room. Please check the code.",
+          roomId: state.roomId,
+        });
+      }, 5000); // Give more time for connection
       return () => clearTimeout(timeout);
     }
-  }, [connectionStatus, hostConnected, state]);
+  }, [connectionStatus, state]);
 
   // Handle state updates from host
   useEffect(() => {
@@ -234,11 +224,32 @@ function JoinPageContent() {
   // Manual join handler
   const handleJoin = useCallback(
     (roomCode: string) => {
+      // Update URL without full navigation (for bookmarking/sharing)
+      window.history.replaceState(null, "", `/play/join?room=${roomCode}`);
+      // Set state to trigger connect
       setState({ status: "connecting", roomId: roomCode });
-      router.push(`/play/join?room=${roomCode}`);
     },
-    [router]
+    []
   );
+
+  // Track the room we're trying to connect to
+  const connectingRoomRef = useRef<string | null>(null);
+
+  // Effect to connect when we enter "connecting" state with a new room
+  useEffect(() => {
+    if (state.status === "connecting") {
+      const roomId = state.roomId;
+      // Only connect if this is a new room we haven't tried yet
+      if (connectingRoomRef.current !== roomId) {
+        connectingRoomRef.current = roomId;
+        // Small delay to allow the config ref to update with new roomId
+        const timeout = setTimeout(() => {
+          connect();
+        }, 100);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [state, connect, currentRoomId]);
 
   const handleRetryConnection = useCallback(() => {
     if (state.status === "error" && state.roomId) {
