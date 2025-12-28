@@ -14,6 +14,9 @@ import type {
 } from "@/lib/types";
 import { getBoardSize } from "@/lib/types";
 import { calculateFrequencies } from "@/lib/constraints/engine";
+import { createDevLogger } from "@/lib/utils/dev-logger";
+
+const log = createDevLogger("HiGHS");
 
 // ============================================================================
 // SEEDED RANDOM NUMBER GENERATOR
@@ -292,7 +295,7 @@ async function solveWithHiGHS(
       solverUsed: "highs",
     };
   } catch (error) {
-    console.error("HiGHS error:", error);
+    log.error("Solver error", error);
     return {
       success: false,
       assignment: [],

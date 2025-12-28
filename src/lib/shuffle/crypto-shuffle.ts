@@ -9,6 +9,8 @@
  * @see FR-011 Deck shuffle using CSPRNG
  */
 
+import { devWarn } from "@/lib/utils/dev-logger";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -82,7 +84,8 @@ export function generateCryptoSeed(): number {
   }
 
   // Fallback for environments without Web Crypto
-  console.warn(
+  devWarn(
+    "CryptoShuffle",
     "Web Crypto API not available, falling back to Math.random for seed generation"
   );
   return Math.floor(Math.random() * 0xffffffff);
