@@ -18,4 +18,8 @@ export type { ConnectionStatus } from "./connection-status";
 export { DrawButton } from "./draw-button";
 export { MiniCard } from "./mini-card";
 export { RemoteController } from "./remote-controller";
+export type { ControllerGameState } from "./remote-controller";
+
+// Pairing Components
+export { QRPairing } from "./qr-pairing";
 

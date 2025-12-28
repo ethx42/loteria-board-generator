@@ -18,8 +18,8 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pause, Play, History, RotateCcw } from "lucide-react";
-import type { GameSession } from "@/lib/types/game";
+import { Pause, Play, History, RotateCcw, LogOut } from "lucide-react";
+import type { GameStatus, ItemDefinition } from "@/lib/types/game";
 import { ConnectionStatusIndicator, type ConnectionStatus } from "./connection-status";
 import { DrawButton } from "./draw-button";
 import { MiniCard } from "./mini-card";
@@ -29,9 +29,23 @@ import { HistoryModal } from "./history-modal";
 // TYPES
 // ============================================================================
 
+/**
+ * Simplified game state received from WebSocket updates
+ */
+export interface ControllerGameState {
+  currentItem: ItemDefinition | null;
+  currentIndex: number;
+  totalItems: number;
+  status: GameStatus;
+  historyCount: number;
+}
+
 interface RemoteControllerProps {
-  /** Current game session */
-  session: GameSession;
+  /** Room ID for display */
+  roomId: string;
+
+  /** Game state received from host */
+  gameState: ControllerGameState;
 
   /** Connection status */
   connectionStatus: ConnectionStatus;
@@ -50,6 +64,9 @@ interface RemoteControllerProps {
 
   /** Callback to retry connection */
   onRetryConnection?: () => void;
+
+  /** Callback to disconnect and go back */
+  onDisconnect?: () => void;
 
   /** Whether reduced motion is preferred */
   reducedMotion?: boolean;
@@ -109,24 +126,26 @@ function SecondaryButton({
 // ============================================================================
 
 export function RemoteController({
-  session,
+  roomId,
+  gameState,
   connectionStatus,
   onDrawCard,
   onPause,
   onResume,
   onReset,
   onRetryConnection,
+  onDisconnect,
   reducedMotion = false,
 }: RemoteControllerProps) {
   const [isHistoryOpen, setHistoryOpen] = useState(false);
 
   // Derived state
-  const currentCard = session.currentIndex + 1;
-  const totalCards = session.totalItems;
+  const currentCard = gameState.currentIndex + 1;
+  const totalCards = gameState.totalItems;
   const isFirstCard = currentCard === 0;
-  const isPaused = session.status === "paused";
-  const isPlaying = session.status === "playing";
-  const isFinished = session.status === "finished";
+  const isPaused = gameState.status === "paused";
+  const isPlaying = gameState.status === "playing";
+  const isFinished = gameState.status === "finished";
   const canDraw = !isFinished && !isPaused && connectionStatus === "connected";
 
   // Callbacks
@@ -152,7 +171,7 @@ export function RemoteController({
       <header className="flex items-center justify-center px-4 py-4">
         <ConnectionStatusIndicator
           status={connectionStatus}
-          roomId={session.id}
+          roomId={roomId}
           onRetry={onRetryConnection}
           reducedMotion={reducedMotion}
         />
@@ -161,22 +180,22 @@ export function RemoteController({
       {/* ====== MIDDLE ZONE: Mini Card Preview ====== */}
       <section className="flex flex-1 flex-col items-center justify-center px-4 py-4">
         <MiniCard
-          item={session.currentItem}
+          item={gameState.currentItem}
           reducedMotion={reducedMotion}
         />
 
         {/* Short text preview (if available) */}
         <AnimatePresence mode="wait">
-          {session.currentItem?.shortText && (
+          {gameState.currentItem?.shortText && (
             <motion.p
-              key={session.currentItem.id}
+              key={gameState.currentItem.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="mt-4 max-w-[280px] text-center font-serif text-sm leading-relaxed text-amber-200/80"
             >
-              {session.currentItem.shortText.slice(0, 100)}
-              {session.currentItem.shortText.length > 100 ? "..." : ""}
+              {gameState.currentItem.shortText.slice(0, 100)}
+              {gameState.currentItem.shortText.length > 100 ? "..." : ""}
             </motion.p>
           )}
         </AnimatePresence>
@@ -187,7 +206,7 @@ export function RemoteController({
         <DrawButton
           onDraw={onDrawCard}
           disabled={!canDraw}
-          gameState={session.status}
+          gameState={gameState.status}
           isFirstCard={isFirstCard}
           reducedMotion={reducedMotion}
         />
@@ -217,7 +236,7 @@ export function RemoteController({
             icon={<History className="h-5 w-5" />}
             label="History"
             onClick={handleOpenHistory}
-            disabled={session.history.length === 0}
+            disabled={gameState.historyCount === 0}
           />
 
           {/* Reset (only show when finished) */}
@@ -226,6 +245,15 @@ export function RemoteController({
               icon={<RotateCcw className="h-5 w-5" />}
               label="New Game"
               onClick={onReset}
+            />
+          )}
+
+          {/* Disconnect */}
+          {onDisconnect && (
+            <SecondaryButton
+              icon={<LogOut className="h-5 w-5" />}
+              label="Leave"
+              onClick={onDisconnect}
             />
           )}
         </div>
@@ -242,19 +270,20 @@ export function RemoteController({
             <motion.div
               className="h-full bg-amber-500"
               initial={{ width: 0 }}
-              animate={{ width: `${(currentCard / totalCards) * 100}%` }}
+              animate={{ width: `${totalCards > 0 ? (currentCard / totalCards) * 100 : 0}%` }}
               transition={{ duration: 0.3 }}
             />
           </div>
         </div>
       </footer>
 
-      {/* History Modal */}
+      {/* History Modal - Note: Controller doesn't have full history, just count */}
+      {/* In a full implementation, we'd request history from host or cache it locally */}
       <HistoryModal
         isOpen={isHistoryOpen}
         onClose={handleCloseHistory}
-        history={session.history}
-        currentItem={session.currentItem}
+        history={[]} // Controller doesn't have history items, only count
+        currentItem={gameState.currentItem}
         reducedMotion={reducedMotion}
       />
     </div>
@@ -262,4 +291,3 @@ export function RemoteController({
 }
 
 export default RemoteController;
-

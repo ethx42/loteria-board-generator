@@ -1,313 +1,78 @@
 "use client";
 
 /**
- * Play Page
+ * Play Landing Page
  *
- * Main game page that handles:
- * - Session initialization
- * - WebSocket connection to Partykit
- * - Game state management
- * - Host Display rendering
+ * Entry point for the game system. Offers two clear paths:
+ * - Host a Game: Create a new session and display QR for pairing
+ * - Join a Game: Enter a room code to connect as controller
  *
- * @see SRD §5.1 Host Display
+ * @see SRD §5.9 Session Entry Options
  */
 
-import { Suspense, useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
-import { HostDisplay } from "./_components/host-display";
-import { loadDemoDeck } from "@/lib/game/deck-loader";
-import type { GameSession, DeckDefinition, GameStatus } from "@/lib/types/game";
+import Link from "next/link";
+import { Monitor, Smartphone } from "lucide-react";
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type PlayPageState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; session: GameSession };
-
-// ============================================================================
-// SHUFFLE UTILITY
-// ============================================================================
-
-/**
- * Fisher-Yates shuffle with seed for reproducibility
- */
-function seededShuffle<T>(array: readonly T[], seed: number): T[] {
-  const result = [...array];
-  let currentSeed = seed;
-
-  // Simple seeded random number generator (mulberry32)
-  const random = () => {
-    currentSeed = (currentSeed + 0x6d2b79f5) | 0;
-    let t = Math.imul(currentSeed ^ (currentSeed >>> 15), 1 | currentSeed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-
-  return result;
-}
-
-/**
- * Generate a random seed
- */
-function generateSeed(): number {
-  return Math.floor(Math.random() * 2147483647);
-}
-
-// ============================================================================
-// SESSION FACTORY
-// ============================================================================
-
-function createInitialSession(
-  deck: DeckDefinition,
-  roomId: string
-): GameSession {
-  const seed = generateSeed();
-  const shuffledItemIds = seededShuffle(
-    deck.items.map((item) => item.id),
-    seed
-  );
-
-  return {
-    id: roomId,
-    deck,
-    boards: [],
-    shuffledDeck: shuffledItemIds,
-    currentIndex: -1,
-    currentItem: null,
-    history: [],
-    totalItems: deck.items.length,
-    shuffleSeed: seed,
-    status: "ready",
-    connection: {
-      hostConnected: true,
-      controllerConnected: false,
-      controllerId: null,
-      lastPing: Date.now(),
-    },
-  };
-}
-
-// ============================================================================
-// LOADING FALLBACK
-// ============================================================================
-
-function PlayPageLoading() {
+export default function PlayLandingPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-amber-950">
-      <div className="text-center">
-        <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent mx-auto" />
-        <p className="font-serif text-xl text-amber-200">Loading game...</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-950 via-amber-900 to-amber-950 p-6">
+      {/* Background pattern */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a574' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-lg text-center">
+        {/* Logo */}
+        <h1 className="mb-2 font-serif text-6xl font-bold text-amber-100 drop-shadow-lg">
+          Tabula
+        </h1>
+        <p className="mb-12 text-lg text-amber-300/70">
+          Your digital Lotería companion
+        </p>
+
+        {/* Options */}
+        <div className="space-y-4">
+          {/* Host a Game */}
+          <Link
+            href="/play/host"
+            className="group flex w-full items-center gap-4 rounded-2xl border-2 border-amber-600/30 bg-amber-900/50 p-6 text-left transition-all hover:border-amber-500 hover:bg-amber-800/50 focus:outline-none focus:ring-4 focus:ring-amber-500/30"
+          >
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500 text-amber-950 transition-transform group-hover:scale-110">
+              <Monitor className="h-7 w-7" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-amber-100">Host a Game</h2>
+              <p className="text-sm text-amber-300/70">
+                Display on TV/laptop • Optional mobile controller
+              </p>
+            </div>
+          </Link>
+
+          {/* Join a Game */}
+          <Link
+            href="/play/join"
+            className="group flex w-full items-center gap-4 rounded-2xl border-2 border-amber-600/30 bg-amber-900/50 p-6 text-left transition-all hover:border-amber-500 hover:bg-amber-800/50 focus:outline-none focus:ring-4 focus:ring-amber-500/30"
+          >
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-amber-700 text-amber-200 transition-transform group-hover:scale-110">
+              <Smartphone className="h-7 w-7" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-amber-100">Join a Game</h2>
+              <p className="text-sm text-amber-300/70">
+                Control from your phone • Enter room code
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <p className="mt-12 text-xs text-amber-400/40">
+          Host displays the cards • Controller draws them
+        </p>
       </div>
     </div>
   );
 }
-
-// ============================================================================
-// MAIN COMPONENT (uses useSearchParams, must be wrapped in Suspense)
-// ============================================================================
-
-function PlayPageContent() {
-  const searchParams = useSearchParams();
-  
-  // IMPORTANT: Generate roomId only once using lazy initialization
-  // This prevents infinite re-renders when no room param is provided
-  const [roomId] = useState<string>(() => {
-    const roomFromUrl = searchParams?.get("room");
-    return roomFromUrl || generateRoomId();
-  });
-
-  const [state, setState] = useState<PlayPageState>({ status: "loading" });
-
-  // Initialize session
-  useEffect(() => {
-    async function initSession() {
-      try {
-        const deck = await loadDemoDeck();
-        const session = createInitialSession(deck, roomId);
-        setState({ status: "ready", session });
-      } catch (error) {
-        setState({
-          status: "error",
-          message: error instanceof Error ? error.message : "Failed to load deck",
-        });
-      }
-    }
-
-    initSession();
-  }, [roomId]);
-
-  // Game actions
-  const handleDrawCard = useCallback(() => {
-    setState((prev) => {
-      if (prev.status !== "ready") return prev;
-
-      const { session } = prev;
-      const nextIndex = session.currentIndex + 1;
-
-      if (nextIndex >= session.totalItems) {
-        return {
-          status: "ready" as const,
-          session: {
-            ...session,
-            status: "finished" as const,
-          },
-        };
-      }
-
-      const nextItemId = session.shuffledDeck[nextIndex];
-      const nextItem = session.deck.items.find((i) => i.id === nextItemId) || null;
-
-      const newHistory =
-        session.currentItem !== null
-          ? [...session.history, session.currentItem]
-          : session.history;
-
-      const newStatus: GameStatus =
-        nextIndex === session.totalItems - 1 ? "finished" : "playing";
-
-      return {
-        status: "ready" as const,
-        session: {
-          ...session,
-          currentIndex: nextIndex,
-          currentItem: nextItem,
-          history: newHistory,
-          status: newStatus,
-        },
-      };
-    });
-  }, []);
-
-  const handlePause = useCallback(() => {
-    setState((prev) => {
-      if (prev.status !== "ready") return prev;
-      return {
-        status: "ready",
-        session: {
-          ...prev.session,
-          status: "paused",
-        },
-      };
-    });
-  }, []);
-
-  const handleResume = useCallback(() => {
-    setState((prev) => {
-      if (prev.status !== "ready") return prev;
-      return {
-        status: "ready",
-        session: {
-          ...prev.session,
-          status: "playing",
-        },
-      };
-    });
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setState((prev) => {
-      if (prev.status !== "ready") return prev;
-
-      const newSeed = generateSeed();
-      const shuffledItemIds = seededShuffle(
-        prev.session.deck.items.map((item) => item.id),
-        newSeed
-      );
-
-      return {
-        status: "ready",
-        session: {
-          ...prev.session,
-          shuffledDeck: shuffledItemIds,
-          currentIndex: -1,
-          currentItem: null,
-          history: [],
-          shuffleSeed: newSeed,
-          status: "ready",
-        },
-      };
-    });
-  }, []);
-
-  const handleDisconnect = useCallback(() => {
-    // In a real app, this would close the WebSocket connection
-    // and navigate back to the home page
-    window.location.href = "/";
-  }, []);
-
-  // Render based on state
-  if (state.status === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-amber-950">
-        <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent mx-auto" />
-          <p className="font-serif text-xl text-amber-200">Loading deck...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (state.status === "error") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-amber-950">
-        <div className="max-w-md rounded-2xl bg-red-900/50 p-6 text-center">
-          <h1 className="mb-4 font-serif text-2xl font-bold text-red-200">
-            Error Loading Game
-          </h1>
-          <p className="text-red-300">{state.message}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-6 rounded-full bg-amber-500 px-6 py-2 font-semibold text-amber-950"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <HostDisplay
-      session={state.session}
-      onDrawCard={handleDrawCard}
-      onPause={handlePause}
-      onResume={handleResume}
-      onReset={handleReset}
-      onDisconnect={handleDisconnect}
-    />
-  );
-}
-
-// ============================================================================
-// UTILITIES
-// ============================================================================
-
-function generateRoomId(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let result = "";
-  for (let i = 0; i < 4; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-// ============================================================================
-// PAGE EXPORT (Wrapped in Suspense for useSearchParams)
-// ============================================================================
-
-export default function PlayPage() {
-  return (
-    <Suspense fallback={<PlayPageLoading />}>
-      <PlayPageContent />
-    </Suspense>
-  );
-}
-
