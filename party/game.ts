@@ -8,7 +8,7 @@
  * @see SRD §3.4 Realtime Protocol
  */
 
-import type { Party, Connection, Server } from "partykit/server";
+import type { Room, Connection, Server } from "partykit/server";
 
 // ============================================================================
 // TYPES
@@ -113,7 +113,7 @@ type IncomingMessage =
 /**
  * Generates a 4-character session ID.
  * Uses alphanumeric characters excluding confusing ones (0, O, I, l).
- * 
+ *
  * Note: Currently unused as room IDs are provided by the client or
  * generated via the URL routing. Kept for potential future use.
  */
@@ -173,7 +173,7 @@ function send(conn: Connection | undefined, message: object): void {
  * Broadcasts a message to all connections except the sender.
  */
 function broadcastExcept(
-  room: Party,
+  room: Room,
   message: object,
   exceptId?: string
 ): void {
@@ -203,7 +203,7 @@ export default class GameRoom implements Server {
     createdAt: Date.now(),
   };
 
-  constructor(public room: Party) {}
+  constructor(public room: Room) {}
 
   /**
    * Called when a client connects to the room.
@@ -473,4 +473,4 @@ export default class GameRoom implements Server {
 // ============================================================================
 
 // Note: Partykit hibernation and other options are configured in partykit.json
-// or via the Party.options static property (when using the Party interface directly)
+// or via the Server.options property (see ServerOptions type)
