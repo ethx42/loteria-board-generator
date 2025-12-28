@@ -78,24 +78,13 @@
     }
   },
   "soundControl": {
-    "title": "Sound Settings",
+    "title": "Sound",
     "menuLabel": "Sound options menu",
-    "mute": "Mute",
-    "unmute": "Unmute",
-    "soundOn": "Sound is on",
-    "soundOff": "Sound is off",
-    "thisDevice": "this device",
-    "thisDeviceDesc": "Only affects your controller",
-    "hostControl": "Host Screen",
-    "muteHost": "Mute host screen",
-    "unmuteHost": "Unmute host screen",
-    "bothDevices": "both devices",
-    "bothDevicesDesc": "Controller and host screen",
-    "controller": "Controller",
-    "host": "Host",
-    "on": "ON",
-    "off": "OFF",
-    "close": "Close menu"
+    "thisDevice": "Controller",
+    "hostScreen": "Host screen",
+    "muteAll": "Mute all",
+    "unmuteAll": "Unmute all",
+    "close": "Close"
   },
   "pairing": {
     "title": "Connect Remote Controller",

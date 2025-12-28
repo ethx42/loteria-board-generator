@@ -78,24 +78,13 @@
     }
   },
   "soundControl": {
-    "title": "Configuración de Sonido",
+    "title": "Sonido",
     "menuLabel": "Menú de opciones de sonido",
-    "mute": "Silenciar",
-    "unmute": "Activar",
-    "soundOn": "Sonido activado",
-    "soundOff": "Sonido desactivado",
-    "thisDevice": "este dispositivo",
-    "thisDeviceDesc": "Solo afecta tu control",
-    "hostControl": "Pantalla Host",
-    "muteHost": "Silenciar pantalla host",
-    "unmuteHost": "Activar pantalla host",
-    "bothDevices": "ambos dispositivos",
-    "bothDevicesDesc": "Control y pantalla host",
-    "controller": "Control",
-    "host": "Host",
-    "on": "ON",
-    "off": "OFF",
-    "close": "Cerrar menú"
+    "thisDevice": "Control",
+    "hostScreen": "Pantalla host",
+    "muteAll": "Silenciar todo",
+    "unmuteAll": "Activar todo",
+    "close": "Cerrar"
   },
   "pairing": {
     "title": "Conectar Control Remoto",

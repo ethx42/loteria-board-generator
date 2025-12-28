@@ -72,8 +72,8 @@ export interface ControllerSoundActions {
   /** Toggle sound on this device only */
   onToggleLocal: () => void;
 
-  /** Set sound on Host (explicit enable/disable) */
-  onSetHost: (enabled: boolean) => void;
+  /** Toggle sound on Host (sends command to Host) */
+  onToggleHost: () => void;
 
   /** Toggle sound on both devices */
   onToggleBoth: () => void;
@@ -310,10 +310,8 @@ export function RemoteController({
             isLocalEnabled={sound.isLocalEnabled}
             isHostEnabled={sound.isHostEnabled}
             onToggleLocal={soundActions.onToggleLocal}
-            onSetHost={soundActions.onSetHost}
+            onToggleHost={soundActions.onToggleHost}
             onToggleBoth={soundActions.onToggleBoth}
-            size="md"
-            className="min-w-[72px] min-h-[72px]"
           />
 
           {/* Disconnect */}
