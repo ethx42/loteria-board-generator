@@ -19,7 +19,6 @@
 // CONSTANTS
 // ============================================================================
 
-const STORAGE_KEY = "tabula:sound";
 const DEFAULT_VOLUME = 0.5;
 
 /**
@@ -103,7 +102,8 @@ class AudioManager {
   private snapshot: AudioStateSnapshot;
 
   constructor() {
-    this.enabled = this.loadPreference();
+    // Always start with sound enabled - no persistence needed
+    this.enabled = true;
     this.snapshot = this.createSnapshot();
   }
 
@@ -162,27 +162,6 @@ class AudioManager {
     return SERVER_SNAPSHOT;
   };
 
-  // ==========================================================================
-  // PREFERENCE MANAGEMENT
-  // ==========================================================================
-
-  /**
-   * Loads sound preference from localStorage.
-   * Defaults to enabled if no preference saved.
-   */
-  private loadPreference(): boolean {
-    if (typeof window === "undefined") return true;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored !== "off";
-  }
-
-  /**
-   * Saves current preference to localStorage.
-   */
-  private savePreference(): void {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEY, this.enabled ? "enabled" : "off");
-  }
 
   // ==========================================================================
   // INITIALIZATION
@@ -208,6 +187,7 @@ class AudioManager {
    * Internal initialization logic.
    */
   private async doInit(): Promise<void> {
+    console.log("[AudioManager] doInit() starting");
     try {
       // Create AudioContext (handles browser prefixes)
       const AudioContextClass =
@@ -221,11 +201,13 @@ class AudioManager {
       }
 
       this.context = new AudioContextClass();
+      console.log("[AudioManager] AudioContext created, state:", this.context.state);
 
       // Load all sound files in parallel
       await Promise.all(
         Object.entries(SOUND_PATHS).map(async ([type, path]) => {
           try {
+            console.log(`[AudioManager] Loading sound: ${type} from ${path}`);
             const response = await fetch(path);
             if (!response.ok) {
               console.warn(
@@ -236,6 +218,7 @@ class AudioManager {
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await this.context!.decodeAudioData(arrayBuffer);
             this.buffers.set(type as SoundType, audioBuffer);
+            console.log(`[AudioManager] Loaded sound: ${type}, buffer duration: ${audioBuffer.duration}s`);
           } catch (error) {
             console.warn(`[AudioManager] Failed to load ${path}:`, error);
           }
@@ -243,6 +226,7 @@ class AudioManager {
       );
 
       this.initialized = true;
+      console.log("[AudioManager] Initialization complete, buffers:", this.buffers.size);
       this.notifyListeners(); // Notify subscribers of initialization
     } catch (error) {
       console.warn("[AudioManager] Initialization failed:", error);
@@ -261,11 +245,27 @@ class AudioManager {
    * @param type - Sound type to play (defaults to "cardDraw")
    */
   async play(type: SoundType = "cardDraw"): Promise<void> {
-    if (!this.enabled) return;
-    if (!this.context) return;
+    console.log("[AudioManager] play() called", {
+      type,
+      enabled: this.enabled,
+      hasContext: !!this.context,
+      initialized: this.initialized,
+    });
+
+    if (!this.enabled) {
+      console.log("[AudioManager] Sound disabled, skipping");
+      return;
+    }
+    if (!this.context) {
+      console.log("[AudioManager] No context, skipping");
+      return;
+    }
 
     const buffer = this.buffers.get(type);
-    if (!buffer) return;
+    if (!buffer) {
+      console.log("[AudioManager] No buffer for type:", type);
+      return;
+    }
 
     try {
       // Resume if suspended (autoplay policy)
@@ -308,8 +308,8 @@ class AudioManager {
    */
   toggle(): boolean {
     this.enabled = !this.enabled;
-    this.savePreference();
-    this.notifyListeners(); // Notify subscribers
+    console.log(`[AudioManager] toggle() -> ${this.enabled}`);
+    this.notifyListeners();
     return this.enabled;
   }
 
@@ -326,10 +326,14 @@ class AudioManager {
    * @param enabled - Whether sound should be enabled
    */
   setEnabled(enabled: boolean): void {
-    if (this.enabled === enabled) return; // No change, no notification
+    console.log(`[AudioManager] setEnabled(${enabled}) - current: ${this.enabled}`);
+    if (this.enabled === enabled) {
+      console.log("[AudioManager] No change, skipping");
+      return;
+    }
     this.enabled = enabled;
-    this.savePreference();
-    this.notifyListeners(); // Notify subscribers
+    console.log(`[AudioManager] State changed to: ${this.enabled}`);
+    this.notifyListeners();
   }
 
   /**
