@@ -116,7 +116,13 @@ function PlayPageLoading() {
 
 function PlayPageContent() {
   const searchParams = useSearchParams();
-  const roomId = searchParams?.get("room") || generateRoomId();
+  
+  // IMPORTANT: Generate roomId only once using lazy initialization
+  // This prevents infinite re-renders when no room param is provided
+  const [roomId] = useState<string>(() => {
+    const roomFromUrl = searchParams?.get("room");
+    return roomFromUrl || generateRoomId();
+  });
 
   const [state, setState] = useState<PlayPageState>({ status: "loading" });
 
@@ -148,10 +154,10 @@ function PlayPageContent() {
 
       if (nextIndex >= session.totalItems) {
         return {
-          status: "ready",
+          status: "ready" as const,
           session: {
             ...session,
-            status: "finished",
+            status: "finished" as const,
           },
         };
       }
@@ -168,7 +174,7 @@ function PlayPageContent() {
         nextIndex === session.totalItems - 1 ? "finished" : "playing";
 
       return {
-        status: "ready",
+        status: "ready" as const,
         session: {
           ...session,
           currentIndex: nextIndex,
