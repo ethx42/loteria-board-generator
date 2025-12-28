@@ -15,7 +15,14 @@
  * @see SRD §5.9 Session Entry Options
  */
 
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { RemoteController } from "@/app/play/_components/remote-controller";
 import { useGameSocket } from "@/lib/realtime/partykit-client";
@@ -184,9 +191,12 @@ function JoinPageContent() {
     debug: true,
   });
 
-  // Stable ref to socket.connect to avoid dependency issues
+  // Stable ref to socket.connect - useLayoutEffect guarantees
+  // the ref is updated before other effects run
   const connectRef = useRef(socket.connect);
-  connectRef.current = socket.connect;
+  useLayoutEffect(() => {
+    connectRef.current = socket.connect;
+  });
 
   // ===========================================================================
   // SOUND SYNC (Single Source of Truth)
@@ -281,14 +291,23 @@ function JoinPageContent() {
   // Listen for sound preference messages from Host
   useEffect(() => {
     const unsubscribe = socket.onMessage((message) => {
-      // Sound preference change from Host
+      // Log all sound-related messages for debugging
+      if (
+        message.type === "SOUND_PREFERENCE" ||
+        message.type === "SOUND_PREFERENCE_ACK"
+      ) {
+        log.log(
+          `[Sound Message] type=${message.type}, full=${JSON.stringify(
+            message
+          )}`
+        );
+      }
+
+      // Sound preference change from Host (Host initiated the change)
       if (
         message.type === "SOUND_PREFERENCE" &&
         message.source === SoundSource.HOST
       ) {
-        log.log(
-          `Received sound preference from host: enabled=${message.enabled}`
-        );
         // Update our knowledge of Host's sound state
         setHostSoundEnabled(message.enabled);
         // Show sync modal
@@ -299,9 +318,8 @@ function JoinPageContent() {
         });
       }
 
-      // ACK from Host confirming our command was executed
+      // ACK from Host confirming sound state (response to our command OR initial state)
       if (message.type === "SOUND_PREFERENCE_ACK") {
-        log.log(`Host confirmed sound change: enabled=${message.enabled}`);
         setHostSoundEnabled(message.enabled);
       }
     });
@@ -314,7 +332,11 @@ function JoinPageContent() {
     if (state.status !== "connected") return;
 
     const currentIndex = state.gameState.currentIndex;
+    log.debug(
+      `[Sound Effect] currentIndex: ${currentIndex}, prevIndex: ${prevIndexRef.current}`
+    );
     if (currentIndex > prevIndexRef.current && currentIndex >= 0) {
+      log.log("[Sound Effect] Playing card sound");
       sound.playCardSound();
     }
     prevIndexRef.current = currentIndex;
@@ -395,6 +417,21 @@ function JoinPageContent() {
     socket.drawCard();
   }, [socket, sound]);
 
+  // Toggle Host sound - invert current known state (default to true if unknown)
+  // Optimistically update local state for immediate UI feedback
+  const handleToggleHost = useCallback(() => {
+    const currentHostState = hostSoundEnabled ?? true; // Assume enabled if unknown
+    const newHostState = !currentHostState;
+
+    log.log(`Toggle Host: ${currentHostState} -> ${newHostState}`);
+
+    // Optimistically update UI before server confirms
+    setHostSoundEnabled(newHostState);
+
+    // Send command to Host
+    sound.controllerSetHostOnly(newHostState);
+  }, [hostSoundEnabled, sound]);
+
   // ===========================================================================
   // RENDER
   // ===========================================================================
@@ -455,7 +492,7 @@ function JoinPageContent() {
       }}
       soundActions={{
         onToggleLocal: sound.controllerToggleLocal,
-        onSetHost: sound.controllerSetHostOnly,
+        onToggleHost: handleToggleHost,
         onToggleBoth: sound.controllerToggleBoth,
         onAcceptSync: sound.acceptSync,
         onDeclineSync: sound.declineSync,

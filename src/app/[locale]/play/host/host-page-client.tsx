@@ -15,7 +15,7 @@
  * @see SRD §5.9 Session Entry & QR Pairing UI
  */
 
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { HostDisplay } from "@/app/play/_components/host-display";
 import { QRPairing } from "@/app/play/_components/qr-pairing";
@@ -157,9 +157,12 @@ function HostPageContent() {
     debug: true,
   });
 
-  // Stable ref to socket.connect to avoid dependency issues
+  // Stable ref to socket.connect - useLayoutEffect guarantees
+  // the ref is updated before other effects run
   const connectRef = useRef(socket.connect);
-  connectRef.current = socket.connect;
+  useLayoutEffect(() => {
+    connectRef.current = socket.connect;
+  });
 
   // ===========================================================================
   // SOUND SYNC (Single Source of Truth)
@@ -360,10 +363,11 @@ function HostPageContent() {
   // Handle sound command from Controller (execute silently and send ACK)
   useEffect(() => {
     if (pendingSoundSync && pendingSoundSync.source === SoundSource.CONTROLLER) {
-      log.debug(`Executing Controller sound command: enabled=${pendingSoundSync.enabled}`);
+      log.log(`Executing Controller sound command: enabled=${pendingSoundSync.enabled}`);
       sound.setEnabled(pendingSoundSync.enabled);
 
       // Send ACK back to Controller so it knows Host's new state
+      log.log(`Sending ACK to Controller: enabled=${pendingSoundSync.enabled}`);
       socket.sendSoundPreferenceAck?.(pendingSoundSync.enabled, pendingSoundSync.scope);
 
       clearPendingSoundSync();
@@ -375,7 +379,9 @@ function HostPageContent() {
     if (state.status !== "pairing" && state.status !== "playing") return;
 
     const currentIndex = state.session.currentIndex;
+    log.debug(`[Sound Effect] currentIndex: ${currentIndex}, prevIndex: ${prevIndexRef.current}`);
     if (currentIndex > prevIndexRef.current && currentIndex >= 0) {
+      log.log("[Sound Effect] Playing card sound");
       sound.playCardSound();
     }
     prevIndexRef.current = currentIndex;
@@ -454,12 +460,17 @@ function HostPageContent() {
       (state.status === "pairing" || state.status === "playing")
     ) {
       broadcastState(state.session);
+      
+      // Also send current sound state so Controller knows Host's sound preference
+      log.log(`Sending initial sound state to controller: enabled=${sound.isEnabled}`);
+      socket.sendSoundPreferenceAck?.(sound.isEnabled, "local");
+      
       hasSentInitialState.current = true;
     }
     if (!socket.controllerConnected) {
       hasSentInitialState.current = false;
     }
-  }, [socket.controllerConnected, state, broadcastState]);
+  }, [socket.controllerConnected, state, broadcastState, socket, sound.isEnabled]);
 
   // ===========================================================================
   // PAGE HANDLERS
