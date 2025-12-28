@@ -50,3 +50,6 @@ __pycache__/
 venv/
 .Python
 *.egg-info/
+
+# Local Netlify folder
+.netlify
