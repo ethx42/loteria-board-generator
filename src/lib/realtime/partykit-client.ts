@@ -9,7 +9,7 @@
  * @see SRD §3.4 Realtime Protocol
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PartySocket from "partysocket";
 import {
   type WSMessage,
@@ -25,6 +25,7 @@ import {
   stateUpdateMessage,
   pingMessage,
 } from "./types";
+import { createDevLogger } from "@/lib/utils/dev-logger";
 
 // ============================================================================
 // TYPES
@@ -231,19 +232,25 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const configRef = useRef(config);
 
-  // Keep config ref updated
-  useEffect(() => {
-    configRef.current = config;
-  }, [config]);
+  // CRITICAL: Update config ref synchronously during render, not in useEffect
+  // This ensures connect() always uses the current roomId, not a stale one
+  configRef.current = config;
 
-  // Debug logger
+  // Create scoped dev logger (only outputs in development)
+  // Memoized to prevent recreating on every render
+  const logger = useMemo(
+    () => createDevLogger(`GameSocket:${config.role}`),
+    [config.role]
+  );
+
+  // Debug logger - uses dev-only logging
   const log = useCallback(
-    (...args: unknown[]) => {
+    (message: string, ...args: unknown[]) => {
       if (configRef.current.debug) {
-        console.log(`[GameSocket:${config.role}]`, ...args);
+        logger.debug(message, ...args);
       }
     },
-    [config.role]
+    [logger]
   );
 
   // ==========================================================================
@@ -337,7 +344,7 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
         try {
           handler(message);
         } catch (err) {
-          console.error("Message handler error:", err);
+          logger.error("Message handler error", err);
         }
       }
     },
@@ -369,21 +376,26 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
 
   const connect = useCallback(() => {
     const { roomId, role, host } = configRef.current;
+    
+    logger.info(`>>> CONNECT CALLED for room: ${roomId}, role: ${role}`);
 
+    // Close any existing socket and stop its auto-reconnection
     if (socketRef.current) {
-      log("Already connected, disconnecting first");
-      socketRef.current.close();
+      logger.warn(`>>> Closing EXISTING socket (was connected to: ${socketRef.current.room})`);
+      // Use code 1000 to indicate clean close and prevent auto-reconnection
+      socketRef.current.close(1000, "Switching rooms");
+      socketRef.current = null;
     }
 
-    log(`Connecting to room ${roomId} as ${role}`);
+    const partyHost = getPartyHost(host);
+    
+    logger.info(`>>> Creating NEW socket for room: ${roomId}, host: ${partyHost}`);
 
     setState((s) => ({
       ...s,
       status: "connecting",
       error: null,
     }));
-
-    const partyHost = getPartyHost(host);
 
     const socket = new PartySocket({
       host: partyHost,
@@ -396,7 +408,7 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
     });
 
     socket.addEventListener("open", () => {
-      log("Connected");
+      logger.info(`>>> WebSocket OPENED - URL: ${socket.url}`);
       setState((s) => ({
         ...s,
         status: "connected",
@@ -427,7 +439,14 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
     });
 
     socket.addEventListener("error", (error) => {
-      log("Error:", error);
+      // Try to get more details about the error
+      const errorDetails = {
+        type: (error as Event).type,
+        url: socket.url,
+        readyState: socket.readyState,
+        message: (error as ErrorEvent).message || "No message",
+      };
+      logger.error(`WebSocket error - URL: ${socket.url}, readyState: ${socket.readyState}`, errorDetails);
       setState((s) => ({
         ...s,
         error: "Connection error",
@@ -458,16 +477,34 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
     });
   }, [log, stopPingInterval]);
 
+  // Close socket when roomId changes (prevents stale connections trying to reconnect to old room)
+  const previousRoomIdRef = useRef(config.roomId);
+  useEffect(() => {
+    logger.debug(`>>> RoomId effect - prev: ${previousRoomIdRef.current}, current: ${config.roomId}`);
+    if (previousRoomIdRef.current !== config.roomId) {
+      logger.warn(`>>> ROOM CHANGED from ${previousRoomIdRef.current} to ${config.roomId} - closing socket`);
+      if (socketRef.current) {
+        logger.warn(`>>> Closing socket due to room change`);
+        socketRef.current.close(1000, "Room changed");
+        socketRef.current = null;
+      }
+      previousRoomIdRef.current = config.roomId;
+    }
+  }, [config.roomId, logger]);
+
   // Cleanup on unmount
   useEffect(() => {
+    logger.debug(">>> Socket hook MOUNTED");
     return () => {
+      logger.warn(`>>> Socket hook CLEANUP - socketRef exists: ${!!socketRef.current}`);
       stopPingInterval();
       if (socketRef.current) {
+        logger.warn(`>>> CLOSING socket in cleanup (room: ${socketRef.current.room})`);
         socketRef.current.close(1000, "Component unmount");
         socketRef.current = null;
       }
     };
-  }, [stopPingInterval]);
+  }, [stopPingInterval, logger]);
 
   // ==========================================================================
   // COMMAND SENDERS (Controller)
