@@ -383,8 +383,8 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
       party: "game",
       query: { role },
       maxRetries: RECONNECT_CONFIG.maxRetries,
-      minReconnectDelay: RECONNECT_CONFIG.minDelay,
-      maxReconnectDelay: RECONNECT_CONFIG.maxDelay,
+      minReconnectionDelay: RECONNECT_CONFIG.minDelay,
+      maxReconnectionDelay: RECONNECT_CONFIG.maxDelay,
     });
 
     socket.addEventListener("open", () => {

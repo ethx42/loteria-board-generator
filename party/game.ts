@@ -113,8 +113,11 @@ type IncomingMessage =
 /**
  * Generates a 4-character session ID.
  * Uses alphanumeric characters excluding confusing ones (0, O, I, l).
+ * 
+ * Note: Currently unused as room IDs are provided by the client or
+ * generated via the URL routing. Kept for potential future use.
  */
-function generateSessionId(): string {
+function _generateSessionId(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
   for (let i = 0; i < 4; i++) {
@@ -122,6 +125,9 @@ function generateSessionId(): string {
   }
   return result;
 }
+
+// Export for testing
+export { _generateSessionId as generateSessionId };
 
 /**
  * Gets the role from connection URL query params.
@@ -321,7 +327,9 @@ export default class GameRoom implements Server {
   private handleControllerConnect(conn: Connection): void {
     // Check if there's already a controller
     if (this.state.controllerId) {
-      const existingController = this.room.getConnection(this.state.controllerId);
+      const existingController = this.room.getConnection(
+        this.state.controllerId
+      );
       if (existingController) {
         // Offer takeover option
         send(conn, {
@@ -352,10 +360,14 @@ export default class GameRoom implements Server {
     send(conn, { type: "ROOM_JOINED" });
 
     // Broadcast controller connected to all (including host)
-    broadcastExcept(this.room, {
-      type: "CONTROLLER_CONNECTED",
-      controllerId: conn.id,
-    }, conn.id);
+    broadcastExcept(
+      this.room,
+      {
+        type: "CONTROLLER_CONNECTED",
+        controllerId: conn.id,
+      },
+      conn.id
+    );
 
     // Send current game state to controller if available
     if (this.state.gameState) {
@@ -457,14 +469,8 @@ export default class GameRoom implements Server {
 }
 
 // ============================================================================
-// STATIC METHODS FOR ROOM MANAGEMENT
+// SERVER OPTIONS
 // ============================================================================
 
-/**
- * Partykit calls this to get the room ID from the request.
- * We use a static prefix path: /parties/game/:roomId
- */
-GameRoom.options = {
-  hibernate: true, // Enable hibernation for cost savings
-};
-
+// Note: Partykit hibernation and other options are configured in partykit.json
+// or via the Party.options static property (when using the Party interface directly)

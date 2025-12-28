@@ -460,12 +460,11 @@ describe("Type Narrowing", () => {
 
     if (isGameCommand(msg)) {
       // TypeScript should know this is a game command
-      expect(
-        msg.type === "DRAW_CARD" ||
-          msg.type === "PAUSE_GAME" ||
-          msg.type === "RESUME_GAME" ||
-          msg.type === "RESET_GAME"
-      ).toBe(true);
+      // We verify by accessing a common property
+      const msgType = msg.type;
+      expect(["DRAW_CARD", "PAUSE_GAME", "RESUME_GAME", "RESET_GAME"]).toContain(
+        msgType
+      );
     }
   });
 
