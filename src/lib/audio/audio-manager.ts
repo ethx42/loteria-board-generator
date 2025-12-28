@@ -15,6 +15,10 @@
  * @see TABULA_V4_DEVELOPMENT_PLAN §5 Phase 2B
  */
 
+import { createDevLogger } from "@/lib/utils/dev-logger";
+
+const log = createDevLogger("AudioManager");
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -187,7 +191,7 @@ class AudioManager {
    * Internal initialization logic.
    */
   private async doInit(): Promise<void> {
-    console.log("[AudioManager] doInit() starting");
+    log.debug("doInit() starting");
     try {
       // Create AudioContext (handles browser prefixes)
       const AudioContextClass =
@@ -201,13 +205,13 @@ class AudioManager {
       }
 
       this.context = new AudioContextClass();
-      console.log("[AudioManager] AudioContext created, state:", this.context.state);
+      log.debug(`AudioContext created, state: ${this.context.state}`);
 
       // Load all sound files in parallel
       await Promise.all(
         Object.entries(SOUND_PATHS).map(async ([type, path]) => {
           try {
-            console.log(`[AudioManager] Loading sound: ${type} from ${path}`);
+            log.debug(`Loading sound: ${type} from ${path}`);
             const response = await fetch(path);
             if (!response.ok) {
               console.warn(
@@ -218,7 +222,7 @@ class AudioManager {
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await this.context!.decodeAudioData(arrayBuffer);
             this.buffers.set(type as SoundType, audioBuffer);
-            console.log(`[AudioManager] Loaded sound: ${type}, buffer duration: ${audioBuffer.duration}s`);
+            log.debug(`Loaded sound: ${type}, buffer duration: ${audioBuffer.duration}s`);
           } catch (error) {
             console.warn(`[AudioManager] Failed to load ${path}:`, error);
           }
@@ -226,7 +230,7 @@ class AudioManager {
       );
 
       this.initialized = true;
-      console.log("[AudioManager] Initialization complete, buffers:", this.buffers.size);
+      log.log(`Initialization complete, buffers: ${this.buffers.size}`);
       this.notifyListeners(); // Notify subscribers of initialization
     } catch (error) {
       console.warn("[AudioManager] Initialization failed:", error);
@@ -245,7 +249,7 @@ class AudioManager {
    * @param type - Sound type to play (defaults to "cardDraw")
    */
   async play(type: SoundType = "cardDraw"): Promise<void> {
-    console.log("[AudioManager] play() called", {
+    log.debug(`play() called`, {
       type,
       enabled: this.enabled,
       hasContext: !!this.context,
@@ -253,17 +257,17 @@ class AudioManager {
     });
 
     if (!this.enabled) {
-      console.log("[AudioManager] Sound disabled, skipping");
+      log.debug("Sound disabled, skipping");
       return;
     }
     if (!this.context) {
-      console.log("[AudioManager] No context, skipping");
+      log.debug("No context, skipping");
       return;
     }
 
     const buffer = this.buffers.get(type);
     if (!buffer) {
-      console.log("[AudioManager] No buffer for type:", type);
+      log.warn(`No buffer for type: ${type}`);
       return;
     }
 
@@ -308,7 +312,7 @@ class AudioManager {
    */
   toggle(): boolean {
     this.enabled = !this.enabled;
-    console.log(`[AudioManager] toggle() -> ${this.enabled}`);
+    log.log(`toggle() -> ${this.enabled}`);
     this.notifyListeners();
     return this.enabled;
   }
@@ -326,13 +330,13 @@ class AudioManager {
    * @param enabled - Whether sound should be enabled
    */
   setEnabled(enabled: boolean): void {
-    console.log(`[AudioManager] setEnabled(${enabled}) - current: ${this.enabled}`);
+    log.debug(`setEnabled(${enabled}) - current: ${this.enabled}`);
     if (this.enabled === enabled) {
-      console.log("[AudioManager] No change, skipping");
+      log.debug("No change, skipping");
       return;
     }
     this.enabled = enabled;
-    console.log(`[AudioManager] State changed to: ${this.enabled}`);
+    log.log(`State changed to: ${this.enabled}`);
     this.notifyListeners();
   }
 
