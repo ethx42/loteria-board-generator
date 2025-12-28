@@ -168,6 +168,22 @@ export interface StateUpdatePayload {
 
   /** Number of cards in history */
   readonly historyCount: number;
+
+  // ========================================
+  // v4.0 Extensions
+  // ========================================
+
+  /**
+   * Whether history modal is currently open (v4.0).
+   * Used for bidirectional sync between Host and Controller.
+   */
+  readonly isHistoryOpen?: boolean;
+
+  /**
+   * Full history data (v4.0).
+   * Sent when modal is open or on reconnection for sync.
+   */
+  readonly history?: readonly ItemDefinition[];
 }
 
 /**
@@ -217,6 +233,152 @@ export type ErrorCode =
   | "INTERNAL_ERROR";
 
 // ============================================================================
+// HISTORY MODAL SYNC MESSAGES (v4.0)
+// ============================================================================
+
+/**
+ * Request to open history modal (bidirectional sync).
+ * When Host or Controller opens the history modal, it broadcasts to sync state.
+ * @direction Host→Server→Controller OR Controller→Server→Host
+ */
+export interface OpenHistoryMessage {
+  readonly type: "OPEN_HISTORY";
+}
+
+/**
+ * Request to close history modal (bidirectional sync).
+ * When Host or Controller closes the history modal, it broadcasts to sync state.
+ * @direction Host→Server→Controller OR Controller→Server→Host
+ */
+export interface CloseHistoryMessage {
+  readonly type: "CLOSE_HISTORY";
+}
+
+// ============================================================================
+// SPECTATOR & REACTION MESSAGES (v4.0)
+// ============================================================================
+
+/**
+ * Available reaction emojis.
+ * Extensible: add new emojis here and they propagate everywhere.
+ */
+export const REACTION_EMOJIS = ["👏", "🎉", "❤️", "😮", "🔥", "👀"] as const;
+
+/**
+ * Type for valid reaction emojis.
+ */
+export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+
+/**
+ * Type guard for ReactionEmoji.
+ */
+export function isReactionEmoji(value: unknown): value is ReactionEmoji {
+  return (
+    typeof value === "string" &&
+    REACTION_EMOJIS.includes(value as ReactionEmoji)
+  );
+}
+
+/**
+ * Spectator sends an emoji reaction.
+ * @direction Spectator→Server
+ */
+export interface SendReactionMessage {
+  readonly type: "SEND_REACTION";
+  readonly emoji: ReactionEmoji;
+}
+
+/**
+ * Server broadcasts aggregated reaction burst.
+ * Batched every 500ms to reduce network traffic.
+ * @direction Server→All
+ */
+export interface ReactionBurstMessage {
+  readonly type: "REACTION_BURST";
+  readonly reactions: readonly {
+    readonly emoji: ReactionEmoji;
+    readonly count: number;
+  }[];
+  readonly timestamp: number;
+}
+
+/**
+ * Server broadcasts spectator count update.
+ * Sent when spectators connect or disconnect.
+ * @direction Server→All
+ */
+export interface SpectatorCountMessage {
+  readonly type: "SPECTATOR_COUNT";
+  readonly count: number;
+}
+
+// ============================================================================
+// SOUND PREFERENCE SYNC MESSAGES (v4.0)
+// ============================================================================
+
+/**
+ * Sound source constants - who initiated the change.
+ */
+export const SoundSource = {
+  HOST: "host",
+  CONTROLLER: "controller",
+} as const;
+
+export type SoundSourceType = (typeof SoundSource)[keyof typeof SoundSource];
+
+/**
+ * Sound scope constants - what devices are affected.
+ *
+ * - LOCAL: Only affects sender's device (no network message)
+ * - HOST_ONLY: Only affects Host device (Controller keeps current state)
+ * - BOTH: Affects both Controller and Host devices
+ */
+export const SoundScope = {
+  LOCAL: "local",
+  HOST_ONLY: "host_only",
+  BOTH: "both",
+} as const;
+
+export type SoundChangeScope = (typeof SoundScope)[keyof typeof SoundScope];
+
+/**
+ * Sound preference change message.
+ *
+ * ## Behavior by source and scope:
+ *
+ * ### Host sends (always scope: "local"):
+ * - Controller receives and shows confirmation modal
+ * - Controller decides to sync or keep their preference
+ *
+ * ### Controller sends:
+ * - scope: "local" → No network message (Controller-only)
+ * - scope: "host_only" → Host changes, Controller stays same
+ * - scope: "both" → Both devices change
+ *
+ * @direction Host→Server→Controller OR Controller→Server→Host
+ */
+export interface SoundPreferenceMessage {
+  readonly type: "SOUND_PREFERENCE";
+  readonly enabled: boolean;
+  /** Origin device that changed the preference */
+  readonly source: SoundSourceType;
+  /** Scope of the change */
+  readonly scope: SoundChangeScope;
+}
+
+/**
+ * Sound preference acknowledgment message.
+ * Sent by Host to confirm it received and executed a Controller command.
+ *
+ * @direction Host→Server→Controller
+ */
+export interface SoundPreferenceAckMessage {
+  readonly type: "SOUND_PREFERENCE_ACK";
+  readonly enabled: boolean;
+  readonly scope: SoundChangeScope;
+}
+
+// ============================================================================
 // DISCRIMINATED UNION
 // ============================================================================
 
@@ -262,7 +424,17 @@ export type WSMessage =
   | StateUpdateMessage
   | FullStateSyncMessage
   // Errors
-  | ErrorMessage;
+  | ErrorMessage
+  // v4.0: History Modal Sync
+  | OpenHistoryMessage
+  | CloseHistoryMessage
+  // v4.0: Spectator & Reactions
+  | SendReactionMessage
+  | ReactionBurstMessage
+  | SpectatorCountMessage
+  // v4.0: Sound Preference Sync
+  | SoundPreferenceMessage
+  | SoundPreferenceAckMessage;
 
 /**
  * Message types that can be sent by the Host.
@@ -270,6 +442,9 @@ export type WSMessage =
 export type HostMessage =
   | CreateRoomMessage
   | StateUpdateMessage
+  | OpenHistoryMessage
+  | CloseHistoryMessage
+  | SoundPreferenceMessage
   | PingMessage;
 
 /**
@@ -281,7 +456,14 @@ export type ControllerMessage =
   | PauseGameMessage
   | ResumeGameMessage
   | ResetGameMessage
+  | OpenHistoryMessage
+  | CloseHistoryMessage
   | PingMessage;
+
+/**
+ * Message types that can be sent by a Spectator.
+ */
+export type SpectatorMessage = SendReactionMessage | PingMessage;
 
 /**
  * Message types that originate from the Server.
@@ -295,12 +477,54 @@ export type ServerMessage =
   | HostDisconnectedMessage
   | StateUpdateMessage
   | FullStateSyncMessage
+  | OpenHistoryMessage
+  | CloseHistoryMessage
+  | ReactionBurstMessage
+  | SpectatorCountMessage
   | PongMessage
   | ErrorMessage;
 
 // ============================================================================
 // TYPE GUARDS
 // ============================================================================
+
+/**
+ * All valid message type strings.
+ * Used by type guard and for validation.
+ */
+const VALID_MESSAGE_TYPES = new Set([
+  // Room Management
+  "CREATE_ROOM",
+  "ROOM_CREATED",
+  "JOIN_ROOM",
+  "ROOM_JOINED",
+  "ROOM_NOT_FOUND",
+  // Connection Events
+  "CONTROLLER_CONNECTED",
+  "CONTROLLER_DISCONNECTED",
+  "HOST_DISCONNECTED",
+  "PING",
+  "PONG",
+  // Game Commands
+  "DRAW_CARD",
+  "PAUSE_GAME",
+  "RESUME_GAME",
+  "RESET_GAME",
+  // State Updates
+  "STATE_UPDATE",
+  "FULL_STATE_SYNC",
+  // Errors
+  "ERROR",
+  // v4.0: History Modal Sync
+  "OPEN_HISTORY",
+  "CLOSE_HISTORY",
+  // v4.0: Spectator & Reactions
+  "SEND_REACTION",
+  "REACTION_BURST",
+  "SPECTATOR_COUNT",
+  // v4.0: Sound Preference Sync
+  "SOUND_PREFERENCE",
+]);
 
 /**
  * Type guard to check if a message is a valid WSMessage.
@@ -312,28 +536,7 @@ export function isWSMessage(value: unknown): value is WSMessage {
 
   if (typeof msg.type !== "string") return false;
 
-  // Check against known message types
-  const validTypes = new Set([
-    "CREATE_ROOM",
-    "ROOM_CREATED",
-    "JOIN_ROOM",
-    "ROOM_JOINED",
-    "ROOM_NOT_FOUND",
-    "CONTROLLER_CONNECTED",
-    "CONTROLLER_DISCONNECTED",
-    "HOST_DISCONNECTED",
-    "PING",
-    "PONG",
-    "DRAW_CARD",
-    "PAUSE_GAME",
-    "RESUME_GAME",
-    "RESET_GAME",
-    "STATE_UPDATE",
-    "FULL_STATE_SYNC",
-    "ERROR",
-  ]);
-
-  return validTypes.has(msg.type);
+  return VALID_MESSAGE_TYPES.has(msg.type);
 }
 
 /**
@@ -369,6 +572,28 @@ export function isConnectionEvent(
     msg.type === "CONTROLLER_CONNECTED" ||
     msg.type === "CONTROLLER_DISCONNECTED" ||
     msg.type === "HOST_DISCONNECTED"
+  );
+}
+
+/**
+ * Type guard for history modal messages.
+ */
+export function isHistoryModalMessage(
+  msg: WSMessage
+): msg is OpenHistoryMessage | CloseHistoryMessage {
+  return msg.type === "OPEN_HISTORY" || msg.type === "CLOSE_HISTORY";
+}
+
+/**
+ * Type guard for spectator-related messages.
+ */
+export function isSpectatorMessage(
+  msg: WSMessage
+): msg is SendReactionMessage | ReactionBurstMessage | SpectatorCountMessage {
+  return (
+    msg.type === "SEND_REACTION" ||
+    msg.type === "REACTION_BURST" ||
+    msg.type === "SPECTATOR_COUNT"
   );
 }
 
@@ -432,6 +657,68 @@ export function stateUpdateMessage(
  */
 export function pingMessage(): PingMessage {
   return { type: "PING", timestamp: Date.now() };
+}
+
+// ============================================================================
+// v4.0 MESSAGE FACTORIES
+// ============================================================================
+
+/**
+ * Creates an OPEN_HISTORY message.
+ */
+export function openHistoryMessage(): OpenHistoryMessage {
+  return { type: "OPEN_HISTORY" };
+}
+
+/**
+ * Creates a CLOSE_HISTORY message.
+ */
+export function closeHistoryMessage(): CloseHistoryMessage {
+  return { type: "CLOSE_HISTORY" };
+}
+
+/**
+ * Creates a SEND_REACTION message.
+ */
+export function sendReactionMessage(emoji: ReactionEmoji): SendReactionMessage {
+  return { type: "SEND_REACTION", emoji };
+}
+
+/**
+ * Creates a REACTION_BURST message.
+ */
+export function reactionBurstMessage(
+  reactions: ReactionBurstMessage["reactions"]
+): ReactionBurstMessage {
+  return { type: "REACTION_BURST", reactions, timestamp: Date.now() };
+}
+
+/**
+ * Creates a SPECTATOR_COUNT message.
+ */
+export function spectatorCountMessage(count: number): SpectatorCountMessage {
+  return { type: "SPECTATOR_COUNT", count };
+}
+
+/**
+ * Creates a SOUND_PREFERENCE message.
+ */
+export function soundPreferenceMessage(
+  enabled: boolean,
+  source: SoundSourceType,
+  scope: SoundChangeScope = SoundScope.LOCAL
+): SoundPreferenceMessage {
+  return { type: "SOUND_PREFERENCE", enabled, source, scope };
+}
+
+/**
+ * Creates a SOUND_PREFERENCE_ACK message.
+ */
+export function soundPreferenceAckMessage(
+  enabled: boolean,
+  scope: SoundChangeScope
+): SoundPreferenceAckMessage {
+  return { type: "SOUND_PREFERENCE_ACK", enabled, scope };
 }
 
 /**
