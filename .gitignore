@@ -30,6 +30,9 @@ yarn-error.log*
 # Vercel
 .vercel
 
+# Partykit
+.partykit/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
