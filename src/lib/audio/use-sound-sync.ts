@@ -240,6 +240,9 @@ export function useSoundSync(config: UseSoundSyncConfig): UseSoundSyncReturn {
   }, []);
 
   const playCardSound = useCallback(async () => {
+    // Ensure audio is initialized before playing
+    // This is safe to call multiple times (idempotent)
+    await audioManager.init();
     await audioManager.playCardDraw();
   }, []);
 
