@@ -615,11 +615,13 @@ export default function SpectatorPageClient() {
               {/* Card + Text Layout - Responsive */}
               <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-10">
                 {/* Card - syncs with host but allows local flip override */}
+                {/* Use "large" size on mobile/tablet where TextPanel is hidden */}
                 <CurrentCard
                   item={gameState?.currentItem ?? null}
                   currentNumber={currentCard}
                   totalCards={totalCards}
                   showCounter={true}
+                  size={isWideScreen ? "default" : "large"}
                   hostFlipState={effectiveFlipState}
                   onFlipChange={handleLocalFlip}
                   showTitle={false}
