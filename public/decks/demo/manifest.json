@@ -7,7 +7,7 @@
     {
       "id": "01",
       "name": "Patacón de Guineo Verde",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/patacon/300/450",
       "shortText": "El patacón, plátano verde frito y aplastado, es la base de muchos platos costeños. Se sirve con todo: desde huevos hasta mariscos.",
       "longText": "El patacón llegó a América con los esclavos africanos y se fusionó con las tradiciones indígenas. En la Costa Caribe se hace con guineo verde (plátano hartón), que se fríe, aplasta con una tostonera y se vuelve a freír hasta quedar crujiente. Es tan versátil que puede ser desayuno con huevos pericos, almuerzo con carne desmechada, o cena con camarones al ajillo. En Barranquilla, el patacón con queso costeño es un clásico de los estaderos.",
       "category": "Gastronomía"
@@ -15,7 +15,7 @@
     {
       "id": "02",
       "name": "Alegría de Coco y Anís",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/alegria/300/450",
       "shortText": "Dulce tradicional hecho con coco rallado, panela y anís. Las palenqueras lo venden en las calles de Cartagena desde tiempos coloniales.",
       "longText": "Las alegrías son un legado dulce de la resistencia afrodescendiente. Las mujeres de San Basilio de Palenque, el primer pueblo libre de América, crearon estos dulces para venderlos y sostener a sus familias. El nombre 'alegría' refleja el espíritu festivo del Caribe. Se preparan cocinando panela con coco rallado y semillas de anís hasta formar una masa que se moldea en bolitas. Cada palenquera tiene su receta secreta, transmitida de madre a hija por generaciones.",
       "category": "Gastronomía"
@@ -23,7 +23,7 @@
     {
       "id": "03",
       "name": "Bollo de Maíz",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/bollo/300/450",
       "shortText": "Masa de maíz envuelta en hojas, herencia indígena que acompaña el desayuno costeño. Puede ser limpio, de queso o de angelito.",
       "longText": "Los bollos son descendientes directos de la cocina indígena precolombina. Los Zenúes y Mocanaes ya envolvían masa de maíz en hojas mucho antes de la llegada española. El bollo limpio acompaña el pescado frito; el de queso lleva queso costeño rallado; y el de angelito se hace con maíz tierno y tiene un sabor más dulce. En los pueblos, las señoras los preparan de madrugada para venderlos calientes en las esquinas. Un buen bollo debe tener la textura justa: ni muy seco ni muy húmedo.",
       "category": "Gastronomía"
@@ -31,7 +31,7 @@
     {
       "id": "04",
       "name": "Caballito de Papaya",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/caballito/300/450",
       "shortText": "Dulce de papaya verde en almíbar, cortado en forma de caballo. Una tradición de las abuelas que se resiste a desaparecer.",
       "longText": "Este dulce artesanal requiere paciencia y habilidad. Se usa papaya verde porque es firme y absorbe mejor el almíbar. Las abuelas la cortan en forma de caballito como un regalo especial para los nietos. El proceso toma horas: primero se remoja en agua con cal para que no se deshaga, luego se cocina lentamente en miel de panela con clavos y canela. El resultado es un dulce translúcido, brillante como un vitral, que sabe a infancia y tradición. Hoy son pocas las señoras que aún dominan este arte.",
       "category": "Gastronomía"
@@ -39,7 +39,7 @@
     {
       "id": "05",
       "name": "Sancocho de Pescado",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/sancocho/300/450",
       "shortText": "Sopa espesa de pescado fresco con yuca, plátano y ñame. El plato que reúne a las familias costeñas los domingos.",
       "longText": "El sancocho es más que un plato: es un ritual familiar. Se prepara en olla grande porque está hecho para compartir. Lleva pescado fresco (preferiblemente bocachico o bagre), yuca, ñame, plátano verde, y se sazona con ajo, cebolla, cilantro y ají dulce. El secreto está en el 'refrito' inicial y en dejar que los sabores se mezclen a fuego lento. En la Costa se come con arroz blanco, aguacate y limón. Dicen que es la mejor cura para el guayabo y para el alma triste.",
       "category": "Gastronomía"
@@ -47,7 +47,7 @@
     {
       "id": "06",
       "name": "Mazamorra de Guineo",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/mazamorra/300/450",
       "shortText": "Postre cremoso de plátano guineo maduro con leche y canela. Sabe a tardes de infancia en casa de la abuela.",
       "longText": "La mazamorra de guineo es comfort food costeño. Se prepara con plátanos maduros (los que ya tienen manchas negras), que se cocinan con leche, azúcar, canela y clavos hasta formar una crema espesa y fragante. Algunas recetas añaden coco rallado o uvas pasas. Es el postre que las abuelas preparan cuando los nietos visitan, el que aparece en las mesas navideñas, el que cura nostalgias. Se sirve tibia o fría, y cada cucharada es un viaje al pasado.",
       "category": "Gastronomía"
@@ -55,7 +55,7 @@
     {
       "id": "07",
       "name": "Cocada de Panela y Coco",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/cocada/300/450",
       "shortText": "Dulce artesanal de coco y panela, cocinado a fuego lento. Las palenqueras las llevan en palanganas sobre sus cabezas.",
       "longText": "Las cocadas son el tesoro dulce del Caribe colombiano. Se hacen rallando coco fresco, mezclándolo con panela derretida y cocinando la mezcla hasta que se carameliza. El punto exacto es crucial: muy poco y queda chiclosa, demasiado y se quema. Las palenqueras las moldean en diferentes formas y las venden pregonando por las calles. Hay blancas (solo con coco), negras (con más panela), y las famosas 'enyucadas' que mezclan coco con yuca. Son patrimonio vivo de la Costa.",
       "category": "Gastronomía"
@@ -63,7 +63,7 @@
     {
       "id": "08",
       "name": "Mojarra Frita",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/mojarra/300/450",
       "shortText": "Pescado frito hasta quedar crujiente, servido con patacón y arroz de coco. El sabor del Caribe en un plato.",
       "longText": "La mojarra frita es el plato icónico de los restaurantes de playa y los kioscos de la Ciénaga. El secreto está en la frescura del pescado y en la técnica de fritura: se hace cortes diagonales en la carne, se sazona con ajo, comino y limón, y se fríe en aceite bien caliente hasta que la piel quede crujiente como galleta. Se sirve entera, con la cola hacia arriba, acompañada de patacón, arroz de coco y ensalada de aguacate. Comerla con las manos, frente al mar, es un placer irrepetible.",
       "category": "Gastronomía"
@@ -71,7 +71,7 @@
     {
       "id": "09",
       "name": "Tinajero",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/tinajero/300/450",
       "shortText": "Mueble de madera que sostiene la tinaja de barro. Antes de las neveras, así se mantenía el agua fresca en el calor costeño.",
       "longText": "El tinajero era el centro del hogar costeño antes de la electricidad. Este mueble de madera, generalmente de cedro o roble, sostenía la tinaja de barro donde se guardaba el agua. Su diseño permitía que el aire circulara alrededor de la vasija, enfriando el agua por evaporación. Muchos tinajeros tenían tallados decorativos y se heredaban de generación en generación. Hoy son piezas de anticuario, pero en algunos pueblos de la Costa aún cumplen su función original.",
       "category": "Objetos Tradicionales"
@@ -79,7 +79,7 @@
     {
       "id": "10",
       "name": "Piedra de Filtrar",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/piedra/300/450",
       "shortText": "Piedra porosa que purifica el agua gota a gota. Tecnología ancestral que aún se usa en pueblos de la Costa.",
       "longText": "Las piedras de filtrar son un ejemplo brillante de tecnología tradicional. Estas piedras porosas, generalmente de origen volcánico o calizo, purifican el agua al pasarla lentamente a través de sus microporos naturales. El proceso elimina sedimentos y algunas bacterias. En los pueblos de la Costa, se colocan sobre la boca de la tinaja y el agua gotea limpia hacia el interior. Aunque parezca primitivo, el principio es el mismo de los filtros modernos. Algunas familias prefieren esta agua 'de piedra' porque dicen que tiene mejor sabor.",
       "category": "Objetos Tradicionales"
@@ -87,7 +87,7 @@
     {
       "id": "11",
       "name": "Tinaja de Barro",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/tinaja/300/450",
       "shortText": "Vasija de barro para guardar agua. El barro la mantiene fresca naturalmente, sin necesidad de electricidad.",
       "longText": "La tinaja es una obra maestra de la física aplicada. Hecha de barro cocido en hornos artesanales, tiene una porosidad que permite que parte del agua se evapore lentamente a través de sus paredes. Esta evaporación enfría el agua restante, manteniéndola fresca incluso en el calor tropical. Las mejores tinajas vienen de pueblos como Mompox y Ráquira, donde los alfareros mantienen técnicas prehispánicas. Una tinaja bien curada (tratada con sábila y limón) puede durar décadas y darle al agua un sabor terroso y fresco que ninguna nevera puede replicar.",
       "category": "Objetos Tradicionales"
@@ -95,7 +95,7 @@
     {
       "id": "12",
       "name": "Ponchera",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/ponchera/300/450",
       "shortText": "Recipiente grande de peltre para bañarse. Antes de las duchas modernas, era el spa de los hogares costeños.",
       "longText": "La ponchera era esencial en los hogares costeños antes del agua corriente. Este recipiente grande de peltre esmaltado, generalmente decorado con flores, se llenaba con agua del pozo o de la tinaja. El baño era un ritual vespertino: el agua se calentaba al sol durante el día y al atardecer la familia se bañaba por turnos, empezando por los mayores. Se usaba jabón de tierra o de monte, y el totumito para echarse agua. La ponchera también servía para lavar ropa y para los partos caseros. Hoy son objetos decorativos que evocan tiempos más lentos.",
       "category": "Objetos Tradicionales"
@@ -103,7 +103,7 @@
     {
       "id": "13",
       "name": "Mecedora de Mimbre",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/mecedora/300/450",
       "shortText": "Silla tejida a mano donde las abuelas cuentan historias. El sonido del mimbre al mecerse es la banda sonora del atardecer.",
       "longText": "La mecedora de mimbre es sinónimo de vida costeña. Tejida a mano con fibras de mimbre o rattan, es el trono desde donde las abuelas gobiernan el hogar. En las tardes calurosas, se saca al patio o al corredor para aprovechar la brisa. El ritmo del mecerse acompaña las conversaciones, los cuentos de espantos, las oraciones del rosario. El crujido del mimbre es música familiar. Los artesanos de Usiacurí, en el Atlántico, son famosos por sus mecedoras, que exportan a todo el país. Una buena mecedora se hereda como las joyas.",
       "category": "Objetos Tradicionales"
@@ -111,7 +111,7 @@
     {
       "id": "14",
       "name": "Fogón de Leña",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/fogon/300/450",
       "shortText": "Cocina tradicional de tres piedras. Dicen que la comida sabe diferente cuando se cocina con leña y amor.",
       "longText": "El fogón de leña es el corazón de la cocina tradicional. En su forma más básica son tres piedras que sostienen la olla sobre el fuego. En versiones más elaboradas es una estructura de barro con hornillas. La leña preferida es de totumo, guayabo o campano, cada una aporta un aroma diferente. Cocinar en fogón requiere habilidad: hay que controlar el fuego, distribuir las brasas, calcular tiempos. Los cocineros expertos dicen que el humo de leña le da un sabor ahumado imposible de replicar. Muchas fondas y restaurantes campestres mantienen fogones porque los clientes prefieren ese sabor.",
       "category": "Objetos Tradicionales"
@@ -119,7 +119,7 @@
     {
       "id": "15",
       "name": "Totuma y Cuchara de Palo",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/totuma/300/450",
       "shortText": "Recipiente hecho del fruto del totumo. Los indígenas lo usaban y aún hoy se prefiere para servir chicha y guarapo.",
       "longText": "La totuma es un recipiente natural hecho del fruto seco del árbol de totumo (Crescentia cujete). Los indígenas la usaban hace milenios y sigue vigente porque no altera el sabor de los líquidos, es liviana y resistente. Se corta el fruto por la mitad, se extrae la pulpa, se seca al sol y se cura con aceite. La cuchara de palo, generalmente de guayacán o palo de rosa, complementa el servicio tradicional. Servir guarapo en totuma es diferente a servirlo en vaso: hay un ritual, un respeto por la tradición, una conexión con los ancestros.",
       "category": "Objetos Tradicionales"
@@ -127,7 +127,7 @@
     {
       "id": "16",
       "name": "Mantel de Hule",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/mantel/300/450",
       "shortText": "Mantel plastificado con estampados de flores. Protege la mesa y guarda las migas de mil almuerzos familiares.",
       "longText": "El mantel de hule es un clásico de las mesas populares colombianas. Estos manteles de vinilo plastificado, decorados generalmente con flores, frutas o cuadros escoceses, protegen las mesas de madera del calor, las manchas y el desgaste. Son fáciles de limpiar (basta pasarles un trapo húmedo) y duran años. En las fondas de carretera, en las casas de pueblo, en las tiendas de barrio, el mantel de hule es omnipresente. Sus estampados coloridos alegran comedores humildes y guardan la memoria de incontables comidas familiares.",
       "category": "Objetos Tradicionales"
@@ -135,7 +135,7 @@
     {
       "id": "17",
       "name": "Estación del Ferrocarril",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/ferrocarril/300/450",
       "shortText": "El tren conectó a Barranquilla con el río y el mundo. La estación Montoya fue testigo de la era dorada de la ciudad.",
       "longText": "El ferrocarril transformó a Barranquilla. Inaugurado en 1871, fue uno de los primeros de Colombia y conectaba el puerto fluvial de Barranquilla con Puerto Colombia en el mar. Por sus rieles llegaron inmigrantes, mercancías y modernidad. La Estación Montoya, de arquitectura republicana, era un hervidero de comerciantes, viajeros y cargadores. El silbato del tren marcaba el ritmo de la ciudad. Cuando el ferrocarril decayó, Barranquilla perdió su hegemonía portuaria. Hoy la vieja estación es un centro cultural que honra esa época dorada.",
       "category": "Historia y Lugares"
@@ -143,7 +143,7 @@
     {
       "id": "18",
       "name": "Tranvía de Barranquilla",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/tranvia/300/450",
       "shortText": "Primer tranvía eléctrico de Colombia, inaugurado en 1892. Por sus rieles pasó la modernidad llegando al Caribe.",
       "longText": "Barranquilla fue pionera en muchas cosas: aviación, telefonía, y también transporte público eléctrico. El tranvía comenzó con mulas en 1890 y se electrificó en 1892, antes que el de Bogotá. Recorría la ciudad desde el centro hasta El Prado, transportando obreros, comerciantes y señoras de sociedad. Era el orgullo de una ciudad que se sentía cosmopolita y moderna. El tranvía funcionó hasta 1940, cuando los buses lo reemplazaron. Hoy solo quedan fotografías y la nostalgia de una Barranquilla que miraba al futuro con optimismo.",
       "category": "Historia y Lugares"
@@ -151,7 +151,7 @@
     {
       "id": "19",
       "name": "El Vapor David Arango",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/vapor/300/450",
       "shortText": "Legendario barco de vapor que navegó el Río Magdalena. Conectaba a Barranquilla con el interior del país.",
       "longText": "El David Arango fue el rey del Río Magdalena. Este vapor de rueda trasera, construido en Estados Unidos en 1909, navegó durante décadas conectando a Barranquilla con Honda, y por extensión con Bogotá. Era un hotel flotante con camarotes de lujo, restaurante, y hasta orquesta para amenizar las noches. El viaje duraba una semana río arriba, atravesando ciénagas, selvas y pueblos ribereños. Gabriel García Márquez se inspiró en estos vapores para 'El amor en los tiempos del cólera'. El David Arango encalló definitivamente en 1961, pero su leyenda navega aún.",
       "category": "Historia y Lugares"
@@ -159,7 +159,7 @@
     {
       "id": "20",
       "name": "Roble Morado en Flor",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/roble/300/450",
       "shortText": "Árbol que pinta de morado las calles de Barranquilla en abril. Sus flores anuncian que viene la temporada de lluvias.",
       "longText": "El roble morado (Tabebuia rosea) es el heraldo de las lluvias en Barranquilla. Entre marzo y abril, cuando el verano ha secado la ciudad, estos árboles explotan en flores rosadas y moradas. Las calles se cubren de pétalos y la ciudad parece vestida de fiesta. Es el anuncio natural de que se acerca la temporada de lluvias, que traerá alivio al calor y verdor a los jardines. El roble morado fue declarado árbol emblemático de Barranquilla. Verlo florecer es un espectáculo que los barranquilleros esperan cada año con emoción.",
       "category": "Naturaleza"
@@ -167,7 +167,7 @@
     {
       "id": "21",
       "name": "Manglares de la Ciénaga",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/manglar/300/450",
       "shortText": "Bosques de mangle que protegen la costa y son hogar de aves, peces y cangrejos. Un ecosistema único en peligro.",
       "longText": "Los manglares son los guardianes de la costa. Estos bosques anfibios, donde los árboles tienen raíces aéreas que se hunden en el agua, son cruciales para la ecología del Caribe. Protegen contra huracanes y marejadas, son criaderos de peces y camarones, hogar de aves migratorias y cangrejos azules. La Ciénaga Grande de Santa Marta tiene el manglar más extenso del Caribe colombiano. Sin embargo, la contaminación, los diques mal planificados y la tala ilegal los han devastado. Recuperarlos es una de las grandes tareas ambientales de la región.",
       "category": "Naturaleza"
@@ -175,7 +175,7 @@
     {
       "id": "22",
       "name": "Bosque Seco Tropical",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/bosque/300/450",
       "shortText": "Ecosistema que pierde sus hojas en verano para sobrevivir. Solo queda el 8% del bosque seco original de Colombia.",
       "longText": "El bosque seco tropical es uno de los ecosistemas más amenazados del mundo. Durante la estación seca, los árboles pierden sus hojas para conservar agua, dejando un paisaje de troncos grises y ramas desnudas. Cuando llegan las lluvias, el bosque reverdece en cuestión de días. Esta adaptación extrema es fascinante, pero también hace al bosque vulnerable. De los bosques que cubrían la Costa Caribe, solo queda el 8%. Animales como el tití cabeciblanco y el oso perezoso dependen de estos fragmentos. Proteger lo que queda es urgente.",
       "category": "Naturaleza"
@@ -183,7 +183,7 @@
     {
       "id": "23",
       "name": "Bocas de Ceniza",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/bocas/300/450",
       "shortText": "Donde el Río Magdalena besa el Mar Caribe. Los tajamares de 1936 permitieron que Barranquilla fuera puerto marítimo.",
       "longText": "Bocas de Ceniza es el delta donde el Río Magdalena encuentra el mar. Durante siglos, los bancos de arena cambiantes hacían imposible la navegación de grandes barcos. En 1936 se completaron los tajamares: dos muros de piedra de 7 kilómetros que canalizan el río y mantienen profundidad navegable. Esta obra monumental permitió que Barranquilla compitiera con Cartagena y Santa Marta como puerto marítimo. Hoy Bocas de Ceniza es un lugar mítico donde se mezclan las aguas dulces del Magdalena con las saladas del Caribe, creando un ecosistema único.",
       "category": "Historia y Lugares"
@@ -191,7 +191,7 @@
     {
       "id": "24",
       "name": "Calles de Barrio Abajo",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/barrioabajo/300/450",
       "shortText": "Cuna del Carnaval, aquí nacieron las cumbiambas. Casas de colores y vecinos que aún se sientan en la puerta al atardecer.",
       "longText": "Barrio Abajo es el alma del Carnaval de Barranquilla. En estas calles de casas coloridas nacieron las primeras cumbiambas a finales del siglo XIX. Aquí viven las familias que han mantenido las tradiciones carnavaleras por generaciones: los Congo, los Garabato, las Marimondas. El barrio conserva su espíritu popular: vecinos que se sientan en la puerta a tomar el fresco, niños jugando en la calle, música de picó en las esquinas. Durante Carnaval, las calles se llenan de comparsas que ensayan todo el año para desfilar con orgullo.",
       "category": "Historia y Lugares"
@@ -199,7 +199,7 @@
     {
       "id": "25",
       "name": "La Marimonda",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/marimonda/300/450",
       "shortText": "Disfraz que nació como burla a la élite barranquillera. Con su nariz fálica y orejas grandes, es el rey del Carnaval.",
       "longText": "La Marimonda es la esencia del humor barranquillero. Nació a principios del siglo XX como burla de los sectores populares hacia la élite: la nariz larga y fálica, las orejas enormes, el saco al revés. Era una forma de reírse de los poderosos sin consecuencias, protegidos por el anonimato del disfraz. Con los años, la Marimonda dejó de ser transgresora y se volvió símbolo oficial de la fiesta. Pero conserva su espíritu burlón: el marimondero baila con movimientos obscenos, hace chistes y desordena todo a su paso. Es el carnaval hecho personaje.",
       "category": "Carnaval"
@@ -207,7 +207,7 @@
     {
       "id": "26",
       "name": "La Palenquera",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/palenquera/300/450",
       "shortText": "Mujer afrodescendiente que vende frutas en la cabeza. Símbolo de resistencia y herencia del Palenque de San Basilio.",
       "longText": "Las palenqueras son descendientes de San Basilio de Palenque, el primer pueblo libre de América. En 1603, los esclavizados fugitivos fundaron este pueblo en los Montes de María y resistieron todos los intentos de reconquista. Las mujeres desarrollaron el comercio ambulante como forma de sustento: frutas, dulces y cocadas en palanganas sobre la cabeza. Su vestido colorido, su lengua propia (el palenquero, única lengua criolla de base española en América) y su porte altivo son símbolos de resistencia cultural. La UNESCO declaró a Palenque patrimonio inmaterial de la humanidad.",
       "category": "Personajes"
@@ -215,7 +215,7 @@
     {
       "id": "27",
       "name": "Vendedor de Aguacates",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/aguacate/300/450",
       "shortText": "Pregonero que recorre las calles en bicicleta. Su grito 'Aguacaaaaate' es la banda sonora de los barrios.",
       "longText": "Los vendedores ambulantes son la voz de los barrios costeños. El de aguacates recorre las calles en bicicleta, con una carreta llena de frutos verdes y maduros, pregonando con voz potente: '¡Aguacaaaaate maduro!'. Cada pregonero tiene su estilo, su melodía, su territorio. También pasan el de las frutas ('Piña, papaya, mango biche'), el del pescado ('Fresquito, recién pescao'), el del pan ('Pan calienteee'). Son comerciantes informales que llevan el mercado a la puerta de las casas. Sus pregones son patrimonio sonoro que se está perdiendo con los supermercados.",
       "category": "Personajes"
@@ -223,7 +223,7 @@
     {
       "id": "28",
       "name": "La Novia de Barranquilla",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/novia/300/450",
       "shortText": "Estatua que recibe a los viajeros en el aeropuerto. Con los brazos abiertos, invita al mundo a bailar cumbia.",
       "longText": "La Novia de Barranquilla es el símbolo oficial de la ciudad. Esta escultura de bronce, creada por el artista Elías Dow, representa a una mujer con los brazos abiertos y una sonrisa acogedora. Fue instalada en el aeropuerto Ernesto Cortissoz en 2008 para recibir a los visitantes. La figura evoca la hospitalidad barranquillera: la ciudad que abraza a todos, que celebra la diversidad, que invita a la fiesta. Durante Carnaval, la Novia aparece vestida de cumbiambera. Es el primer y último rostro que ven quienes llegan o parten por aire.",
       "category": "Historia y Lugares"
@@ -231,7 +231,7 @@
     {
       "id": "29",
       "name": "Alejandro Obregón",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/obregon/300/450",
       "shortText": "Pintor barranquillero, padre del arte moderno colombiano. Sus cóndores y violencias narraron un país en llamas.",
       "longText": "Alejandro Obregón (1920-1992) revolucionó la pintura colombiana. Nacido en Barcelona pero barranquillero de adopción, lideró el movimiento que sacó al arte del academicismo hacia la expresión visceral. Sus cóndores heridos, sus toros sangrantes, sus paisajes de violencia, narraron la tragedia del país con colores vibrantes y trazos potentes. Fue amigo de García Márquez y parte del Grupo de Barranquilla. Vivía entre Cartagena y la playa de La Cueva, pintando, bebiendo y discutiendo de arte. Su obra está en los principales museos de América y su influencia perdura en el arte colombiano.",
       "category": "Personajes"
@@ -239,7 +239,7 @@
     {
       "id": "30",
       "name": "Enrique Grau",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/grau/300/450",
       "shortText": "Artista que pintó la sensualidad del Caribe. Sus gordas mulatas celebran la belleza sin complejos.",
       "longText": "Enrique Grau (1920-2004) fue un maestro del volumen y el color. Nacido en Ciudad de Panamá pero criado en Cartagena, desarrolló un estilo inconfundible: figuras voluptuosas, mulatas de carnes generosas, escenas domésticas llenas de sensualidad tropical. Sus pinturas celebran la belleza del cuerpo caribeño sin los complejos del canon europeo. También fue escultor, muralista y escenógrafo. El Museo de Arte Moderno de Cartagena lleva su nombre. Su obra es una fiesta de colores cálidos y formas redondeadas que captura la esencia sensual del Caribe.",
       "category": "Personajes"
@@ -247,7 +247,7 @@
     {
       "id": "31",
       "name": "Pescador de Atarraya",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/pescador/300/450",
       "shortText": "Arte ancestral de lanzar la red circular. En la Ciénaga Grande, aún pescan como lo hacían hace siglos.",
       "longText": "La pesca con atarraya es un arte que requiere años de práctica. La atarraya es una red circular con plomos en los bordes que, al ser lanzada con un movimiento rotatorio del cuerpo, se abre en el aire como una flor y cae sobre el agua atrapando los peces. Es la técnica que usan los pescadores de la Ciénaga Grande, del Río Magdalena, de las playas. Se aprende de niño, imitando al padre o al abuelo. Un buen atarrayero conoce los vientos, las mareas, los lugares donde se esconden los peces. Es oficio y es poesía.",
       "category": "Personajes"
@@ -255,7 +255,7 @@
     {
       "id": "32",
       "name": "Azafate",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/azafate/300/450",
       "shortText": "Bandeja de madera para servir comida. Las abuelas la usaban para llevar el almuerzo a la mesa.",
       "longText": "El azafate es una bandeja tradicional de madera, generalmente redonda u ovalada, usada para servir y transportar alimentos. En las casas costeñas era el implemento con que las madres y abuelas llevaban la comida del fogón a la mesa. También servía para ofrecer bebidas a las visitas o para cargar las ventas de las vendedoras ambulantes. Los mejores azafates se hacían de cedro, ligero y resistente. Hoy son piezas de artesanía que se venden en mercados turísticos, pero en algunos hogares tradicionales aún cumplen su función original.",
       "category": "Objetos Tradicionales"
@@ -263,7 +263,7 @@
     {
       "id": "33",
       "name": "Ajiaco Santafereño",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/ajiaco/300/450",
       "shortText": "Aunque es bogotano, representa el intercambio cultural. El tren y el vapor trajeron sabores del interior a la Costa.",
       "longText": "El ajiaco llegó a la Costa en los barcos de vapor y los vagones del tren. Esta sopa bogotana de tres tipos de papa, pollo y guascas era desconocida en el Caribe hasta que el comercio fluvial conectó las regiones. Los pasajeros del vapor que subían a Honda llevaban recetas costeñas y bajaban con sabores del altiplano. Así se tejió la gastronomía nacional: el ajiaco llegó a Barranquilla, el sancocho subió a Bogotá. El ajiaco costeño tiene sus adaptaciones: menos papa, más yuca, servido con patacón. Es mestizaje culinario.",
       "category": "Gastronomía"
@@ -271,7 +271,7 @@
     {
       "id": "34",
       "name": "Tranvía de Bogotá",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/tranviabog/300/450",
       "shortText": "El interior también tuvo su tranvía. Barranquilla fue primero, pero Bogotá lo recordó en su literatura y nostalgia.",
       "longText": "El tranvía de Bogotá, aunque posterior al de Barranquilla, se volvió más famoso por la literatura y el cine. Funcionó de 1884 a 1951 y aparece en obras de José Asunción Silva, Eduardo Caballero Calderón y en la película 'El Bogotazo'. Cuando los buses lo reemplazaron, la ciudad perdió un sistema de transporte limpio y eficiente. La nostalgia bogotana por el tranvía se convirtió en símbolo de un pasado más civilizado. Barranquilla, que tuvo el primero, no lo mitificó tanto: los costeños miran al futuro, no al pasado.",
       "category": "Historia y Lugares"
@@ -279,7 +279,7 @@
     {
       "id": "35",
       "name": "Olleta y Molinillo",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/olleta/300/450",
       "shortText": "Para preparar el chocolate caliente. El molinillo gira entre las manos creando la espuma perfecta.",
       "longText": "La olleta y el molinillo son los implementos tradicionales para preparar chocolate caliente. La olleta es una olla de barro o cobre con asa y pico vertedor. El molinillo es un batidor de madera tallada con anillos móviles que, al girarse entre las palmas, crea espuma en el chocolate. La técnica parece simple pero requiere ritmo y presión exactos para lograr la espuma perfecta. En las casas tradicionales, el chocolate de la mañana se prepara así: disolviendo tabletas de cacao en agua o leche caliente, batiendo con molinillo hasta que corona de espuma. Es ritual, no solo bebida.",
       "category": "Objetos Tradicionales"
@@ -287,7 +287,7 @@
     {
       "id": "36",
       "name": "Tamal Santafereño",
-      "imageUrl": "/decks/demo/placeholder.svg",
+      "imageUrl": "https://picsum.photos/seed/tamal/300/450",
       "shortText": "Envuelto en hoja de plátano, viajó del interior a la Costa. Cada región le pone su sazón y lo hace suyo.",
       "longText": "El tamal es un plato prehispánico que cada región colombiana adaptó a sus ingredientes y gustos. El santafereño lleva masa de arroz, carne de cerdo, pollo, garbanzo, zanahoria y huevo, envuelto en hoja de plátano. Cuando llegó a la Costa, los cocineros le agregaron su sazón: más ají, suero costeño, diferentes carnes. Hay tamales tolimenses, vallunos, nariñenses, cada uno con su personalidad. El tamal costeño suele ser más pequeño y condimentado. Es comida de fiesta, de madrugada de diciembre, de desayuno dominguero. Donde hay tamal, hay celebración.",
       "category": "Gastronomía"

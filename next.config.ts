@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
 
   // Empty turbopack config to acknowledge we're using turbopack
   turbopack: {},
+
+  // Configure remote image domains for Next.js Image component
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default withNextIntl(nextConfig);
