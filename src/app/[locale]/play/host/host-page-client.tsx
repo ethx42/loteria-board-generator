@@ -227,6 +227,7 @@ function HostPageContent() {
         totalItems: session.totalItems,
         status: session.status,
         historyCount: session.history.length,
+        history: session.history,
       });
     },
     [socket]
