@@ -50,6 +50,8 @@ export interface SpectatorGameState {
   readonly status: StateUpdatePayload["status"];
   /** Number of cards in history */
   readonly historyCount: number;
+  /** Whether the current card is flipped (showing longText) */
+  readonly isFlipped?: boolean;
   /** Full history (when available) */
   readonly history?: StateUpdatePayload["history"];
 }
@@ -237,6 +239,7 @@ export function useSpectatorSocket(
             status: message.payload.status,
             historyCount: message.payload.historyCount,
             history: message.payload.history,
+            isFlipped: message.payload.isFlipped,
           });
           break;
 
@@ -327,11 +330,39 @@ export function useSpectatorSocket(
       log("Disconnected:", event.code, event.reason);
       stopPingInterval();
 
-      if (event.code !== 1000) {
-        setConnectionStatus("reconnecting");
-      } else {
-        setConnectionStatus("disconnected");
-        setGameState(null);
+      // Handle specific close codes from server
+      switch (event.code) {
+        case 1000: // Normal closure
+          setConnectionStatus("disconnected");
+          setGameState(null);
+          break;
+
+        case 4004: // Room not found (custom code from server)
+          setConnectionStatus("error");
+          setError("Game not found. The room may have been closed.");
+          break;
+
+        case 4001: // Host disconnected
+        case 4002: // Game ended
+          setConnectionStatus("error");
+          setError("The game has ended.");
+          break;
+
+        case 4003: // Already connected (duplicate connection)
+          setConnectionStatus("error");
+          setError("You're already connected from another tab.");
+          break;
+
+        default:
+          // For other unexpected disconnections, try to reconnect
+          if (event.code >= 4000) {
+            // Server-initiated close with custom code - don't reconnect
+            setConnectionStatus("error");
+            setError(event.reason || "Connection closed by server.");
+          } else {
+            // Network issues - attempt reconnect
+            setConnectionStatus("reconnecting");
+          }
       }
     });
 
