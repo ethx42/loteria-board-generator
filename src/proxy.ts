@@ -1,11 +1,12 @@
 /**
- * Next.js Middleware for Internationalization
+ * Next.js Proxy for Internationalization
  *
  * Handles locale detection and routing for all requests.
  * Runs on the edge for optimal performance.
  *
- * @module middleware
+ * @module proxy
  * @see TABULA_V4_DEVELOPMENT_PLAN §4 Phase 1B
+ * @see https://nextjs.org/docs/messages/middleware-to-proxy
  */
 
 import createMiddleware from "next-intl/middleware";
