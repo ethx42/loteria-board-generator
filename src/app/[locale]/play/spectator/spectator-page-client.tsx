@@ -19,7 +19,7 @@
  * @see SRD §6.3 Spectator Mode
  */
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Users, WifiOff, AlertCircle, Loader2 } from "lucide-react";
@@ -32,7 +32,10 @@ import { HistoryStrip } from "@/app/play/_components/history-strip";
 
 // New spectator-specific components
 import { ReactionBar } from "@/components/reaction-bar";
+import { ReactionsOverlay } from "@/components/reactions-overlay";
+import { SoundToggle } from "@/components/sound-toggle";
 import { useSpectatorSocket } from "@/lib/realtime/use-spectator-socket";
+import { audioManager } from "@/lib/audio/audio-manager";
 import type { ItemDefinition } from "@/lib/types/game";
 import { cn } from "@/lib/utils";
 
@@ -40,11 +43,18 @@ import { cn } from "@/lib/utils";
 // TYPES
 // ============================================================================
 
+/** Error codes for more granular error handling */
+type SpectatorErrorCode =
+  | "room-not-found"
+  | "game-ended"
+  | "already-connected"
+  | "connection-failed";
+
 type SpectatorViewState =
   | { status: "no-room" }
   | { status: "connecting" }
   | { status: "connected" }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; errorCode?: SpectatorErrorCode }
   | { status: "game-ended" };
 
 // ============================================================================
@@ -129,32 +139,123 @@ function ConnectionBadge({
 // ============================================================================
 
 interface ErrorViewProps {
-  message: string;
+  errorCode?: SpectatorErrorCode;
+  fallbackMessage?: string;
   onRetry?: () => void;
+  onGoBack?: () => void;
 }
 
-function ErrorView({ message, onRetry }: ErrorViewProps) {
-  const t = useTranslations("common");
+function ErrorView({
+  errorCode,
+  fallbackMessage,
+  onRetry,
+  onGoBack,
+}: ErrorViewProps) {
+  const t = useTranslations("spectator.errors");
+  const router = useRouter();
+
+  // Get contextual content based on error code
+  const getErrorContent = () => {
+    switch (errorCode) {
+      case "room-not-found":
+        return {
+          icon: WifiOff,
+          iconBg: "bg-amber-800/30",
+          iconColor: "text-amber-400",
+          title: t("roomNotFound"),
+          description: t("roomNotFoundDesc"),
+          showRetry: true,
+          showGoBack: true,
+        };
+      case "game-ended":
+        return {
+          icon: Users,
+          iconBg: "bg-green-900/30",
+          iconColor: "text-green-400",
+          title: t("gameEnded"),
+          description: t("gameEndedDesc"),
+          showRetry: false,
+          showGoBack: true,
+        };
+      case "already-connected":
+        return {
+          icon: AlertCircle,
+          iconBg: "bg-yellow-900/30",
+          iconColor: "text-yellow-400",
+          title: t("alreadyConnected"),
+          description: t("alreadyConnectedDesc"),
+          showRetry: false,
+          showGoBack: true,
+        };
+      default:
+        return {
+          icon: AlertCircle,
+          iconBg: "bg-red-900/30",
+          iconColor: "text-red-400",
+          title: t("connectionFailed"),
+          description: fallbackMessage || t("connectionFailedDesc"),
+          showRetry: true,
+          showGoBack: true,
+        };
+    }
+  };
+
+  const content = getErrorContent();
+  const Icon = content.icon;
+
+  const handleGoBack = () => {
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      router.push("/play/join");
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-amber-950 via-amber-900 to-amber-950 p-6">
-      <div className="text-center max-w-md">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-900/30">
-          <AlertCircle className="h-10 w-10 text-red-400" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center max-w-md"
+      >
+        {/* Icon */}
+        <div
+          className={cn(
+            "mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full",
+            content.iconBg
+          )}
+        >
+          <Icon className={cn("h-10 w-10", content.iconColor)} />
         </div>
-        <h1 className="mb-4 font-serif text-2xl font-bold text-amber-100">
-          {t("error")}
+
+        {/* Title */}
+        <h1 className="mb-3 font-serif text-2xl font-bold text-amber-100">
+          {content.title}
         </h1>
-        <p className="text-amber-300/70 mb-6">{message}</p>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="rounded-full bg-amber-500 px-6 py-3 font-semibold text-amber-950 transition-colors hover:bg-amber-400"
-          >
-            {t("retry")}
-          </button>
-        )}
-      </div>
+
+        {/* Description */}
+        <p className="text-amber-300/70 mb-8">{content.description}</p>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {content.showRetry && onRetry && (
+            <button
+              onClick={onRetry}
+              className="w-full sm:w-auto rounded-full bg-amber-500 px-6 py-3 font-semibold text-amber-950 transition-colors hover:bg-amber-400"
+            >
+              {t("tryAgain")}
+            </button>
+          )}
+          {content.showGoBack && (
+            <button
+              onClick={handleGoBack}
+              className="w-full sm:w-auto rounded-full border-2 border-amber-500/50 px-6 py-3 font-semibold text-amber-200 transition-colors hover:border-amber-400 hover:text-amber-100"
+            >
+              {t("goBack")}
+            </button>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -205,13 +306,88 @@ export default function SpectatorPageClient() {
     error,
     gameState,
     spectatorCount,
-    // reactions - currently unused, but available for future ReactionsOverlay on spectator
+    reactions,
     sendReaction,
     connect,
   } = useSpectatorSocket({
     roomId,
     debug: true,
   });
+
+  // ==========================================================================
+  // SYNC + OVERRIDE FLIP PATTERN
+  // ==========================================================================
+
+  // Local flip state: null = synced with host, boolean = local override
+  const [localFlipOverride, setLocalFlipOverride] = useState<boolean | null>(
+    null
+  );
+
+  // Host's flip state from server
+  const hostFlipState = gameState?.isFlipped ?? false;
+
+  // Effective flip state: use local override if set, otherwise host state
+  const effectiveFlipState =
+    localFlipOverride !== null ? localFlipOverride : hostFlipState;
+
+  // Is the spectator's view different from what host is showing?
+  const isOutOfSync =
+    localFlipOverride !== null && localFlipOverride !== hostFlipState;
+
+  // Reset local override when card changes (resync with host)
+  // Track previous card ID to detect changes
+  const currentItemId = gameState?.currentItem?.id;
+  const previousItemIdRef = useRef(currentItemId);
+  useEffect(() => {
+    if (currentItemId !== previousItemIdRef.current) {
+      // New card - reset local override using queueMicrotask for React Compiler compliance
+      queueMicrotask(() => {
+        setLocalFlipOverride(null);
+      });
+      previousItemIdRef.current = currentItemId;
+    }
+  }, [currentItemId]);
+
+  // Handle spectator clicking to flip (local override)
+  const handleLocalFlip = useCallback((newFlipState: boolean) => {
+    setLocalFlipOverride(newFlipState);
+  }, []);
+
+  // ==========================================================================
+  // LOCAL AUDIO (independent, no sync with host)
+  // ==========================================================================
+
+  // Sound enabled by default (no localStorage persistence per user request)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+
+  // Track previous card index to detect new card draws
+  const prevCardIndexRef = useRef(gameState?.currentIndex ?? -1);
+
+  // Play sound when a new card is drawn
+  useEffect(() => {
+    const currentIndex = gameState?.currentIndex ?? -1;
+
+    // Only play if index increased (new card drawn) and sound is enabled
+    if (currentIndex > prevCardIndexRef.current && currentIndex >= 0) {
+      if (isSoundEnabled) {
+        // Play card sound (init is idempotent)
+        audioManager.init().then(() => {
+          audioManager.playCardDraw();
+        });
+      }
+    }
+
+    prevCardIndexRef.current = currentIndex;
+  }, [gameState?.currentIndex, isSoundEnabled]);
+
+  // Toggle sound handler
+  const handleToggleSound = useCallback(() => {
+    setIsSoundEnabled((prev) => {
+      const newEnabled = !prev;
+      audioManager.setEnabled(newEnabled);
+      return newEnabled;
+    });
+  }, []);
 
   // Convert game state history to ItemDefinition array for HistoryStrip
   const history = gameState?.history;
@@ -227,22 +403,47 @@ export default function SpectatorPageClient() {
       return { status: "no-room" };
     }
 
+    // Helper to detect error code from error message
+    const detectErrorCode = (msg: string): SpectatorErrorCode => {
+      if (msg.includes("not found") || msg.includes("closed")) {
+        return "room-not-found";
+      }
+      if (msg.includes("ended") || msg.includes("finished")) {
+        return "game-ended";
+      }
+      if (msg.includes("already") || msg.includes("another tab")) {
+        return "already-connected";
+      }
+      return "connection-failed";
+    };
+
     switch (connectionStatus) {
       case "connecting":
       case "reconnecting":
         return { status: "connecting" };
       case "connected":
         return { status: "connected" };
-      case "error":
+      case "error": {
+        const errorCode = error ? detectErrorCode(error) : "connection-failed";
+        if (errorCode === "game-ended") {
+          return { status: "game-ended" };
+        }
         return {
           status: "error",
           message: error ?? "Connection failed",
+          errorCode,
         };
+      }
       case "disconnected":
         if (error) {
+          const errorCode = detectErrorCode(error);
+          if (errorCode === "game-ended") {
+            return { status: "game-ended" };
+          }
           return {
-            status: error.includes("ended") ? "game-ended" : "error",
+            status: "error",
             message: error,
+            errorCode,
           };
         }
         return { status: "connecting" }; // Default while waiting
@@ -292,10 +493,11 @@ export default function SpectatorPageClient() {
   if (viewState.status === "error" || viewState.status === "game-ended") {
     return (
       <ErrorView
-        message={
-          viewState.status === "error"
-            ? viewState.message
-            : tGame("status.finished")
+        errorCode={
+          viewState.status === "error" ? viewState.errorCode : "game-ended"
+        }
+        fallbackMessage={
+          viewState.status === "error" ? viewState.message : undefined
         }
         onRetry={handleRetry}
       />
@@ -306,6 +508,9 @@ export default function SpectatorPageClient() {
   const isGameActive =
     gameState?.status === "playing" || gameState?.status === "ready";
   const isGameFinished = gameState?.status === "finished";
+  const isWaitingForHost =
+    gameState?.status === "waiting" ||
+    (!gameState && viewState.status === "connected");
   const currentCard =
     gameState?.currentIndex !== undefined ? gameState.currentIndex + 1 : 0;
   const totalCards = gameState?.totalItems ?? 0;
@@ -316,23 +521,36 @@ export default function SpectatorPageClient() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-linear-to-br from-amber-950 via-amber-900 to-amber-950 flex flex-col">
       {/* Background overlay */}
-      <div className="fixed inset-0 bg-black/30 pointer-events-none" aria-hidden="true" />
+      <div
+        className="fixed inset-0 bg-black/30 pointer-events-none"
+        aria-hidden="true"
+      />
 
       {/* ===== HEADER (relative, in flow) ===== */}
-      <header className="relative z-20 flex-shrink-0 flex items-center justify-between p-3 sm:p-4">
+      <header className="relative z-20 shrink-0 flex items-center justify-between p-3 sm:p-4">
         <ConnectionBadge
           status={viewState.status}
           spectatorCount={spectatorCount}
           roomId={roomId}
         />
 
-        {/* Watching indicator */}
-        <div className="flex items-center gap-2 text-amber-400/60">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-          </span>
-          <span className="text-sm">{t("watching")}</span>
+        {/* Right side: Watching indicator + Sound toggle */}
+        <div className="flex items-center gap-3">
+          {/* Watching indicator */}
+          <div className="flex items-center gap-2 text-amber-400/60">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+            </span>
+            <span className="text-sm">{t("watching")}</span>
+          </div>
+
+          {/* Sound toggle - local control, non-intrusive */}
+          <SoundToggle
+            isEnabled={isSoundEnabled}
+            onClick={handleToggleSound}
+            size="sm"
+          />
         </div>
       </header>
 
@@ -357,6 +575,36 @@ export default function SpectatorPageClient() {
                 {tGame("connecting")}
               </p>
             </motion.div>
+          ) : isWaitingForHost ? (
+            /* Waiting for host to start the game */
+            <motion.div
+              key="waiting"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="text-center max-w-md px-6"
+            >
+              {/* Pulsing waiting indicator */}
+              <div className="mb-6 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-800/30">
+                <div className="h-12 w-12 animate-pulse rounded-full bg-amber-500/60" />
+              </div>
+
+              <h2 className="font-serif text-2xl font-bold text-amber-100 mb-3">
+                {t("waitingForHost")}
+              </h2>
+
+              <p className="text-amber-300/70 mb-6">{t("hostSettingUp")}</p>
+
+              {/* Spectator count */}
+              {spectatorCount > 0 && (
+                <div className="inline-flex items-center gap-2 rounded-full bg-amber-900/50 px-4 py-2 text-sm text-amber-200">
+                  <Users className="h-4 w-4" />
+                  <span>
+                    {t("spectatorsWaiting", { count: spectatorCount })}
+                  </span>
+                </div>
+              )}
+            </motion.div>
           ) : (
             <motion.div
               key="content"
@@ -366,12 +614,17 @@ export default function SpectatorPageClient() {
             >
               {/* Card + Text Layout - Responsive */}
               <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-10">
-                {/* Card - always visible, counter included */}
+                {/* Card - syncs with host but allows local flip override */}
                 <CurrentCard
                   item={gameState?.currentItem ?? null}
                   currentNumber={currentCard}
                   totalCards={totalCards}
                   showCounter={true}
+                  hostFlipState={effectiveFlipState}
+                  onFlipChange={handleLocalFlip}
+                  showTitle={false}
+                  isOutOfSync={isOutOfSync}
+                  outOfSyncText={t("personalView")}
                 />
 
                 {/* TextPanel - hidden on small screens, visible on lg+ */}
@@ -391,9 +644,9 @@ export default function SpectatorPageClient() {
         </AnimatePresence>
       </main>
 
-      {/* ===== WIDE SCREEN: Vertical History Strip (fixed right) ===== */}
+      {/* ===== WIDE SCREEN: Vertical History Strip (fixed right, below header) ===== */}
       {isWideScreen && hasHistory && (
-        <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/40">
+        <aside className="fixed right-0 top-14 bottom-0 w-32 z-10 border-l border-amber-700/20 bg-amber-950/40">
           <HistoryStrip
             history={historyItems}
             currentItem={gameState?.currentItem ?? null}
@@ -401,14 +654,14 @@ export default function SpectatorPageClient() {
             scrollable={true}
             fadeEdge={true}
             autoScrollToNewest={true}
-            className="h-full pt-14"
+            className="h-full pt-4"
           />
         </aside>
       )}
 
       {/* ===== STANDARD SCREENS: History Strip (in flow, above reaction bar) ===== */}
       {!isWideScreen && hasHistory && (
-        <aside className="relative z-10 flex-shrink-0 border-t border-amber-700/30 bg-gradient-to-t from-amber-950/60 to-amber-950/30 py-3 mb-2">
+        <aside className="relative z-10 shrink-0 border-t border-amber-700/30 bg-linear-to-t from-amber-950/60 to-amber-950/30 py-3 mb-2">
           {/* 
             Width constraint: 
             - Mobile: full width (px-4 provides edge padding)
@@ -428,13 +681,16 @@ export default function SpectatorPageClient() {
       )}
 
       {/* ===== SPACER for fixed ReactionBar ===== */}
-      <div className="h-16 flex-shrink-0" aria-hidden="true" />
+      <div className="h-16 shrink-0" aria-hidden="true" />
 
       {/* ===== REACTION BAR (fixed at bottom via component's own styles) ===== */}
       <ReactionBar
         onReact={sendReaction}
         isEnabled={viewState.status === "connected" && isGameActive}
       />
+
+      {/* ===== REACTIONS OVERLAY (shows reactions from all spectators) ===== */}
+      <ReactionsOverlay reactions={reactions} />
 
       {/* Game finished overlay */}
       <AnimatePresence>
