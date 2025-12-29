@@ -1,0 +1,266 @@
+{
+  "id": "demo-barranquilla",
+  "name": "Tabula de Barranquilla",
+  "description": "Un recorrido por la cultura, gastronomía e historia de Barranquilla y la Costa Caribe colombiana.",
+  "language": "es",
+  "items": [
+    {
+      "id": "01",
+      "name": "Patacón de Guineo Verde",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "El patacón, plátano verde frito y aplastado, es la base de muchos platos costeños. Se sirve con todo: desde huevos hasta mariscos.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "02",
+      "name": "Alegría de Coco y Anís",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Dulce tradicional hecho con coco rallado, panela y anís. Las palenqueras lo venden en las calles de Cartagena desde tiempos coloniales.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "03",
+      "name": "Bollo de Maíz",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Masa de maíz envuelta en hojas, herencia indígena que acompaña el desayuno costeño. Puede ser limpio, de queso o de angelito.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "04",
+      "name": "Caballito de Papaya",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Dulce de papaya verde en almíbar, cortado en forma de caballo. Una tradición de las abuelas que se resiste a desaparecer.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "05",
+      "name": "Sancocho de Pescado",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Sopa espesa de pescado fresco con yuca, plátano y ñame. El plato que reúne a las familias costeñas los domingos.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "06",
+      "name": "Mazamorra de Guineo",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Postre cremoso de plátano guineo maduro con leche y canela. Sabe a tardes de infancia en casa de la abuela.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "07",
+      "name": "Cocada de Panela y Coco",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Dulce artesanal de coco y panela, cocinado a fuego lento. Las palenqueras las llevan en palanganas sobre sus cabezas.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "08",
+      "name": "Mojarra Frita",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Pescado frito hasta quedar crujiente, servido con patacón y arroz de coco. El sabor del Caribe en un plato.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "09",
+      "name": "Tinajero",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Mueble de madera que sostiene la tinaja de barro. Antes de las neveras, así se mantenía el agua fresca en el calor costeño.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "10",
+      "name": "Piedra de Filtrar",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Piedra porosa que purifica el agua gota a gota. Tecnología ancestral que aún se usa en pueblos de la Costa.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "11",
+      "name": "Tinaja de Barro",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Vasija de barro para guardar agua. El barro la mantiene fresca naturalmente, sin necesidad de electricidad.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "12",
+      "name": "Ponchera",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Recipiente grande de peltre para bañarse. Antes de las duchas modernas, era el spa de los hogares costeños.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "13",
+      "name": "Mecedora de Mimbre",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Silla tejida a mano donde las abuelas cuentan historias. El sonido del mimbre al mecerse es la banda sonora del atardecer.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "14",
+      "name": "Fogón de Leña",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Cocina tradicional de tres piedras. Dicen que la comida sabe diferente cuando se cocina con leña y amor.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "15",
+      "name": "Totuma y Cuchara de Palo",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Recipiente hecho del fruto del totumo. Los indígenas lo usaban y aún hoy se prefiere para servir chicha y guarapo.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "16",
+      "name": "Mantel de Hule",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Mantel plastificado con estampados de flores. Protege la mesa y guarda las migas de mil almuerzos familiares.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "17",
+      "name": "Estación del Ferrocarril",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "El tren conectó a Barranquilla con el río y el mundo. La estación Montoya fue testigo de la era dorada de la ciudad.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "18",
+      "name": "Tranvía de Barranquilla",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Primer tranvía eléctrico de Colombia, inaugurado en 1892. Por sus rieles pasó la modernidad llegando al Caribe.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "19",
+      "name": "El Vapor David Arango",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Legendario barco de vapor que navegó el Río Magdalena. Conectaba a Barranquilla con el interior del país.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "20",
+      "name": "Roble Morado en Flor",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Árbol que pinta de morado las calles de Barranquilla en abril. Sus flores anuncian que viene la temporada de lluvias.",
+      "category": "Naturaleza"
+    },
+    {
+      "id": "21",
+      "name": "Manglares de la Ciénaga",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Bosques de mangle que protegen la costa y son hogar de aves, peces y cangrejos. Un ecosistema único en peligro.",
+      "category": "Naturaleza"
+    },
+    {
+      "id": "22",
+      "name": "Bosque Seco Tropical",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Ecosistema que pierde sus hojas en verano para sobrevivir. Solo queda el 8% del bosque seco original de Colombia.",
+      "category": "Naturaleza"
+    },
+    {
+      "id": "23",
+      "name": "Bocas de Ceniza",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Donde el Río Magdalena besa el Mar Caribe. Los tajamares de 1936 permitieron que Barranquilla fuera puerto marítimo.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "24",
+      "name": "Calles de Barrio Abajo",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Cuna del Carnaval, aquí nacieron las cumbiambas. Casas de colores y vecinos que aún se sientan en la puerta al atardecer.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "25",
+      "name": "La Marimonda",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Disfraz que nació como burla a la élite barranquillera. Con su nariz fálica y orejas grandes, es el rey del Carnaval.",
+      "category": "Carnaval"
+    },
+    {
+      "id": "26",
+      "name": "La Palenquera",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Mujer afrodescendiente que vende frutas en la cabeza. Símbolo de resistencia y herencia del Palenque de San Basilio.",
+      "category": "Personajes"
+    },
+    {
+      "id": "27",
+      "name": "Vendedor de Aguacates",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Pregonero que recorre las calles en bicicleta. Su grito 'Aguacaaaaate' es la banda sonora de los barrios.",
+      "category": "Personajes"
+    },
+    {
+      "id": "28",
+      "name": "La Novia de Barranquilla",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Estatua que recibe a los viajeros en el aeropuerto. Con los brazos abiertos, invita al mundo a bailar cumbia.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "29",
+      "name": "Alejandro Obregón",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Pintor barranquillero, padre del arte moderno colombiano. Sus cóndores y violencias narraron un país en llamas.",
+      "category": "Personajes"
+    },
+    {
+      "id": "30",
+      "name": "Enrique Grau",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Artista que pintó la sensualidad del Caribe. Sus gordas mulatas celebran la belleza sin complejos.",
+      "category": "Personajes"
+    },
+    {
+      "id": "31",
+      "name": "Pescador de Atarraya",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Arte ancestral de lanzar la red circular. En la Ciénaga Grande, aún pescan como lo hacían hace siglos.",
+      "category": "Personajes"
+    },
+    {
+      "id": "32",
+      "name": "Azafate",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Bandeja de madera para servir comida. Las abuelas la usaban para llevar el almuerzo a la mesa.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "33",
+      "name": "Ajiaco Santafereño",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Aunque es bogotano, representa el intercambio cultural. El tren y el vapor trajeron sabores del interior a la Costa.",
+      "category": "Gastronomía"
+    },
+    {
+      "id": "34",
+      "name": "Tranvía de Bogotá",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "El interior también tuvo su tranvía. Barranquilla fue primero, pero Bogotá lo recordó en su literatura y nostalgia.",
+      "category": "Historia y Lugares"
+    },
+    {
+      "id": "35",
+      "name": "Olleta y Molinillo",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Para preparar el chocolate caliente. El molinillo gira entre las manos creando la espuma perfecta.",
+      "category": "Objetos Tradicionales"
+    },
+    {
+      "id": "36",
+      "name": "Tamal Santafereño",
+      "imageUrl": "/decks/demo/placeholder.svg",
+      "shortText": "Envuelto en hoja de plátano, viajó del interior a la Costa. Cada región le pone su sazón y lo hace suyo.",
+      "category": "Gastronomía"
+    }
+  ],
+  "theme": {
+    "primaryColor": "#D4A574",
+    "secondaryColor": "#8B4513",
+    "fontFamily": "Georgia, serif"
+  }
+}
+

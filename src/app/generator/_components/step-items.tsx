@@ -52,7 +52,7 @@ export function StepItems() {
           Game Items
         </h2>
         <p className="text-amber-600 text-sm">
-          Enter your Lotería items, one per line or separated by commas
+          Enter your Tabula items, one per line or separated by commas
         </p>
       </div>
 

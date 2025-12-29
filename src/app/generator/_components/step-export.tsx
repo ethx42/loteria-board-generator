@@ -32,7 +32,7 @@ export function StepExport() {
 
   const handleDownloadJSON = () => {
     const data = {
-      game: "Lotería",
+      game: "Tabula",
       generatedAt: new Date().toISOString(),
       config: {
         totalItems: config.items.length,
@@ -59,7 +59,7 @@ export function StepExport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `loteria-boards-${Date.now()}.json`;
+    a.download = `tabula-boards-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -77,7 +77,7 @@ export function StepExport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `loteria-boards-${Date.now()}.csv`;
+    a.download = `tabula-boards-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -106,7 +106,7 @@ export function StepExport() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Lotería Boards</title>
+          <title>Tabula Boards</title>
           <style>
             body { font-family: system-ui, sans-serif; padding: 20px; }
             .board { 
@@ -140,7 +140,7 @@ export function StepExport() {
           </style>
         </head>
         <body>
-          <h1 style="text-align: center; color: #92400e;">Lotería Boards</h1>
+          <h1 style="text-align: center; color: #92400e;">Tabula Boards</h1>
           <div style="display: flex; flex-wrap: wrap; justify-content: center;">
             ${boards
               .map(
@@ -177,7 +177,7 @@ export function StepExport() {
         grid: b.grid.map((row) => row.map((item) => ({ id: item.id, name: item.name }))),
       })),
     };
-    localStorage.setItem("loteria-boards", JSON.stringify(data));
+    localStorage.setItem("tabula-boards", JSON.stringify(data));
     alert("Boards saved to browser storage!");
   };
 

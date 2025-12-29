@@ -110,7 +110,7 @@ describe("Pigeonhole Principle", () => {
 
   it("should correctly calculate binomial coefficients", () => {
     expect(binomial(10, 5)).toBe(252);
-    expect(binomial(36, 16)).toBe(7307872110); // Lotería: 36 items, 16 slots
+    expect(binomial(36, 16)).toBe(7307872110); // Tabula: 36 items, 16 slots
     expect(binomial(18, 16)).toBe(153);
     expect(binomial(5, 5)).toBe(1);
     expect(binomial(5, 0)).toBe(1);

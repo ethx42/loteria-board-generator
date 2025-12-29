@@ -13,7 +13,7 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-amber-900 mb-4">
-            Lotería
+            Tabula
           </h1>
 
           <p className="text-xl text-amber-700 max-w-2xl mx-auto">

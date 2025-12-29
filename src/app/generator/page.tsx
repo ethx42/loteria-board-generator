@@ -8,7 +8,7 @@ export default function GeneratorPage() {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight text-amber-900 mb-2">
-            Lotería Board Generator
+            Tabula Board Generator
           </h1>
           <p className="text-amber-700/80 text-lg">
             Create optimally distributed game boards
