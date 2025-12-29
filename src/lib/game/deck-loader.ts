@@ -447,6 +447,27 @@ export async function loadDeckFromFile(file: File): Promise<DeckDefinition> {
   });
 }
 
+/**
+ * Loads a deck from a URL (e.g., from R2 storage).
+ * Useful for loading decks from the catalog or external sources.
+ *
+ * @param url - URL to the manifest.json file
+ * @returns Promise resolving to the deck definition
+ * @throws Error if the manifest cannot be loaded or is invalid
+ */
+export async function loadDeckFromUrl(url: string): Promise<DeckDefinition> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load deck: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const json = await response.text();
+  return loadDeckFromJson(json);
+}
+
 // ============================================================================
 // THEME APPLICATION
 // ============================================================================
