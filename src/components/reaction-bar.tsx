@@ -191,11 +191,11 @@ export function ReactionBar({
               animate={{ 
                 opacity: 1, 
                 y: 0,
-                scale: pressedEmoji === emoji ? 1.1 : 1,
+                scale: pressedEmoji === emoji ? 1.12 : 1,
               }}
               transition={{ 
                 delay: index * 0.05,
-                scale: { type: "spring", stiffness: 500, damping: 25 },
+                scale: { duration: 0.1 },
               }}
               className={cn(
                 "relative text-2xl sm:text-3xl p-2 sm:p-3 rounded-full",
@@ -213,14 +213,14 @@ export function ReactionBar({
             >
               {emoji}
 
-              {/* Ripple ring on press - uses key to force new animation on each press */}
-              <AnimatePresence mode="wait">
+              {/* Ripple ring on press */}
+              <AnimatePresence>
                 {pressedEmoji === emoji && (
                   <motion.div
                     key={`ring-${Date.now()}`}
-                    initial={{ scale: 0.5, opacity: 0.8 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 1.4, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     className="absolute inset-0 rounded-full border-2 border-amber-400 pointer-events-none"
                   />
                 )}
