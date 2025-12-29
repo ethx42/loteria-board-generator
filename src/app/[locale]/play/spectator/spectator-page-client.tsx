@@ -334,8 +334,8 @@ export default function SpectatorPageClient() {
         {/* Main content area - adapts to history strip layout */}
         <main
           className={cn(
-            "flex flex-1 flex-col items-center justify-center p-4 pt-20",
-            isWideScreen ? "pr-36" : "pb-48" // Space for history + reaction bar
+            "flex flex-1 flex-col items-center justify-center p-4 pt-16",
+            isWideScreen ? "pr-36" : "pb-36" // Space for history + reaction bar
           )}
         >
           <AnimatePresence mode="wait">
@@ -389,18 +389,18 @@ export default function SpectatorPageClient() {
           <>
             {isWideScreen ? (
               /* Wide screens: Vertical strip on right side */
-              <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/50 backdrop-blur-sm">
+              <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/40">
                 <HistoryStrip
                   history={historyItems}
                   currentItem={gameState?.currentItem ?? null}
                   maxCards={8}
                   forceVertical={true}
-                  className="h-full pt-20"
+                  className="h-full pt-16"
                 />
               </aside>
             ) : (
               /* Standard screens: Horizontal strip above reaction bar */
-              <aside className="fixed bottom-24 left-0 right-0 z-20 border-t border-amber-700/20 bg-amber-950/60 py-3 backdrop-blur-sm">
+              <aside className="fixed bottom-16 left-0 right-0 z-20 border-t border-amber-700/20 bg-amber-950/40 py-2">
                 <HistoryStrip
                   history={historyItems}
                   currentItem={gameState?.currentItem ?? null}

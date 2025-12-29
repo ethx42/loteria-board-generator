@@ -179,8 +179,8 @@ export function ReactionBar({
     <footer
       className={cn(
         "fixed bottom-0 inset-x-0 z-40 safe-area-inset-bottom",
-        "bg-linear-to-t from-amber-950/95 via-amber-950/90 to-transparent",
-        "backdrop-blur-sm pt-6 pb-4 px-4",
+        "bg-linear-to-t from-amber-950/90 to-transparent",
+        "pt-3 pb-3 px-4",
         className
       )}
     >
