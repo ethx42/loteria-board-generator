@@ -234,13 +234,22 @@ export function ReactionBar({
         ))}
       </div>
 
-      {/* Keyboard hint (desktop only) */}
-      <div className="hidden sm:flex justify-center mt-3 gap-4 text-[10px] text-amber-500/40">
-        {REACTION_EMOJIS.map((emoji, index) => (
-          <span key={emoji} className="font-mono">
-            {index + 1}
-          </span>
-        ))}
+      {/* Keyboard hint (desktop only) - positioned to align under buttons */}
+      <div
+        className="hidden sm:flex justify-center text-[10px] text-amber-500/40"
+        style={{ marginTop: "-4px" }}
+      >
+        <div className="flex gap-3">
+          {REACTION_EMOJIS.map((emoji, index) => (
+            <span
+              key={emoji}
+              className="font-mono text-center"
+              style={{ width: "54px" }} // Match button width (text-3xl + p-3)
+            >
+              {index + 1}
+            </span>
+          ))}
+        </div>
       </div>
     </footer>
   );

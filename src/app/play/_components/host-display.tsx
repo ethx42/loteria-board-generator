@@ -252,20 +252,29 @@ export function HostDisplay({
               onOpenModal={handleOpenHistory}
               forceVertical={true}
               reducedMotion={reducedMotion}
+              scrollable={true}
+              fadeEdge={true}
+              autoScrollToNewest={true}
               className="h-full"
             />
           </aside>
         ) : (
           /* Horizontal layout on standard screens (FR-035b) */
           <aside className="absolute bottom-28 left-0 right-0 border-t border-amber-700/20 bg-amber-950/50 py-2 backdrop-blur-sm">
-            <HistoryStrip
-              history={history}
-              currentItem={currentItem}
-              onCardClick={handleHistoryCardClick}
-              onOpenModal={handleOpenHistory}
-              forceVertical={false}
-              reducedMotion={reducedMotion}
-            />
+            {/* Constrain width to match content area (~768px) */}
+            <div className="mx-auto w-full max-w-3xl px-4">
+              <HistoryStrip
+                history={history}
+                currentItem={currentItem}
+                onCardClick={handleHistoryCardClick}
+                onOpenModal={handleOpenHistory}
+                forceVertical={false}
+                reducedMotion={reducedMotion}
+                scrollable={true}
+                fadeEdge={true}
+                autoScrollToNewest={true}
+              />
+            </div>
           </aside>
         )}
       </div>

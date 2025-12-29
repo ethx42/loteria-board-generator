@@ -123,3 +123,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================================
+ * UTILITY: Scrollbar Hidden
+ * Use: className="scrollbar-none"
+ * Hides scrollbar while maintaining scroll functionality
+ * ============================================================================ */
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}

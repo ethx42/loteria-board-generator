@@ -4,21 +4,24 @@
  * HistoryStrip Component
  *
  * Displays previously called cards with adaptive layout:
- * - Vertical layout on wide screens (≥1400px)
- * - Horizontal layout on standard screens (<1400px)
+ * - Vertical layout on wide screens (≥1024px with forceVertical)
+ * - Horizontal layout on standard screens
  *
- * Features visual hierarchy based on recency:
- * - Newest: full opacity, full scale, accent border
- * - Older: decreasing opacity and scale
+ * Features:
+ * - Visual hierarchy based on recency (newest = prominent)
+ * - Optional scrollable container with hidden scrollbar
+ * - Optional fade effect at the edge for older cards
+ * - Auto-scroll to newest card when history updates
  *
  * @see SRD §5.6 History Strip Component
  * @see FR-035a, FR-035b, FR-035c
  */
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import Image from "next/image";
 import type { ItemDefinition } from "@/lib/types/game";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // TYPES
@@ -37,7 +40,7 @@ interface HistoryStripProps {
   /** Callback to open full history modal */
   onOpenModal?: () => void;
 
-  /** Maximum number of cards to display */
+  /** Maximum number of cards to display (ignored when scrollable=true) */
   maxCards?: number;
 
   /** Whether to use vertical layout (auto-detected by default) */
@@ -48,6 +51,17 @@ interface HistoryStripProps {
 
   /** Custom className for the container */
   className?: string;
+
+  // ========== v4.0 Scrollable Features ==========
+
+  /** Enable scrollable container (shows all cards, not limited by maxCards) */
+  scrollable?: boolean;
+
+  /** Show fade effect at the edge for older cards */
+  fadeEdge?: boolean;
+
+  /** Auto-scroll to newest card when history updates */
+  autoScrollToNewest?: boolean;
 }
 
 interface HistoryCardProps {
@@ -206,7 +220,14 @@ export function HistoryStrip({
   forceVertical,
   reducedMotion = false,
   className = "",
+  // v4.0 scrollable features
+  scrollable = false,
+  fadeEdge = false,
+  autoScrollToNewest = false,
 }: HistoryStripProps) {
+  // Ref for scroll container
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   // State for detecting layout
   const [isWideScreen, setIsWideScreen] = useState(false);
 
@@ -229,27 +250,68 @@ export function HistoryStrip({
   const isVertical = forceVertical ?? isWideScreen;
 
   // Get visible cards (most recent first for display)
+  // When scrollable, show all cards; otherwise limit to maxCards
   const visibleHistory = useMemo(() => {
-    return [...history].reverse().slice(0, maxCards);
-  }, [history, maxCards]);
+    const reversed = [...history].reverse();
+    return scrollable ? reversed : reversed.slice(0, maxCards);
+  }, [history, maxCards, scrollable]);
 
-  const hasMoreCards = history.length > maxCards;
+  const hasMoreCards = !scrollable && history.length > maxCards;
+
+  // Auto-scroll to newest card when history changes
+  useEffect(() => {
+    if (autoScrollToNewest && scrollRef.current && history.length > 0) {
+      // Scroll to start (where newest card is)
+      scrollRef.current.scrollTo({
+        [isVertical ? "top" : "left"]: 0,
+        behavior: reducedMotion ? "auto" : "smooth",
+      });
+    }
+  }, [history.length, autoScrollToNewest, isVertical, reducedMotion]);
 
   if (history.length === 0) {
     return null;
   }
 
+  // CSS classes for scrollable container
+  const scrollableClasses = scrollable
+    ? cn(
+        // Enable scrolling
+        isVertical ? "overflow-y-auto" : "overflow-x-auto",
+        // Hide scrollbar
+        "scrollbar-none",
+        // Smooth scroll on touch devices
+        "scroll-smooth"
+      )
+    : "";
+
+  // Inline styles for fade edge effect (mask-image)
+  // Fade starts at 90% to ensure most content is fully visible
+  const fadeStyles: React.CSSProperties = fadeEdge
+    ? {
+        maskImage: isVertical
+          ? "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)"
+          : "linear-gradient(to right, black 0%, black 80%, transparent 100%)",
+        WebkitMaskImage: isVertical
+          ? "linear-gradient(to bottom, black 0%, black 80%, transparent 100%)"
+          : "linear-gradient(to right, black 0%, black 80%, transparent 100%)",
+      }
+    : {};
+
   return (
     <div
-      className={`
-        flex items-center gap-2
-        ${
-          isVertical
-            ? "h-full flex-col justify-start py-4"
-            : "w-full flex-row justify-center px-4"
-        }
-        ${className}
-      `}
+      ref={scrollRef}
+      className={cn(
+        "flex items-center gap-2",
+        isVertical
+          ? "h-full flex-col justify-start py-4"
+          : scrollable
+            ? "flex-row justify-start px-4" // Start from left when scrollable
+            : "w-full flex-row justify-center px-4", // Center when not scrollable
+        scrollableClasses,
+        className
+      )}
+      style={fadeStyles}
       role="region"
       aria-label="Previously called cards"
     >
@@ -275,19 +337,19 @@ export function HistoryStrip({
         </AnimatePresence>
       </LayoutGroup>
 
-      {/* "View all" button */}
+      {/* "View all" button - only when not scrollable */}
       {hasMoreCards && onOpenModal && (
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onClick={onOpenModal}
-          className={`
-            flex shrink-0 items-center justify-center rounded-lg
-            bg-amber-900/50 text-amber-200 backdrop-blur-sm
-            transition-colors hover:bg-amber-800/60
-            focus:outline-none focus:ring-2 focus:ring-amber-400
-            ${isVertical ? "w-20 py-2 md:w-24" : "h-16 px-3 md:h-20"}
-          `}
+          className={cn(
+            "flex shrink-0 items-center justify-center rounded-lg",
+            "bg-amber-900/50 text-amber-200 backdrop-blur-sm",
+            "transition-colors hover:bg-amber-800/60",
+            "focus:outline-none focus:ring-2 focus:ring-amber-400",
+            isVertical ? "w-20 py-2 md:w-24" : "h-16 px-3 md:h-20"
+          )}
           aria-label={`View all ${history.length} cards`}
         >
           <span className="text-xs font-medium">

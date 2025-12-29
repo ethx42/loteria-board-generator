@@ -264,11 +264,15 @@ export default function SpectatorPageClient() {
   // ADAPTIVE LAYOUT (mirrors host-display.tsx)
   // ========================================================================
 
+  // Breakpoint aligned with Tailwind's lg (1024px)
+  // At lg+: side-by-side layout with vertical history strip on right
+  // Below lg: mobile layout with horizontal history strip
   const [isWideScreen, setIsWideScreen] = useState(false);
 
   useEffect(() => {
     const checkWidth = () => {
-      setIsWideScreen(window.innerWidth >= 1400);
+      // Align with Tailwind lg breakpoint (1024px)
+      setIsWideScreen(window.innerWidth >= 1024);
     };
     checkWidth();
     window.addEventListener("resize", checkWidth);
@@ -306,13 +310,16 @@ export default function SpectatorPageClient() {
     gameState?.currentIndex !== undefined ? gameState.currentIndex + 1 : 0;
   const totalCards = gameState?.totalItems ?? 0;
 
-  return (
-    <div className="min-h-screen bg-linear-to-br from-amber-950 via-amber-900 to-amber-950">
-      {/* Background overlay */}
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+  // Calculate bottom padding based on whether history exists
+  const hasHistory = historyItems.length > 0;
 
-      {/* Header - fixed position for consistency */}
-      <header className="fixed top-0 inset-x-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-amber-950/80 to-transparent backdrop-blur-sm">
+  return (
+    <div className="h-screen w-screen overflow-hidden bg-linear-to-br from-amber-950 via-amber-900 to-amber-950 flex flex-col">
+      {/* Background overlay */}
+      <div className="fixed inset-0 bg-black/30 pointer-events-none" aria-hidden="true" />
+
+      {/* ===== HEADER (relative, in flow) ===== */}
+      <header className="relative z-20 flex-shrink-0 flex items-center justify-between p-3 sm:p-4">
         <ConnectionBadge
           status={viewState.status}
           spectatorCount={spectatorCount}
@@ -329,89 +336,105 @@ export default function SpectatorPageClient() {
         </div>
       </header>
 
-      {/* Main Layout Container */}
-      <div className="relative flex h-screen w-full">
-        {/* Main content area - adapts to history strip layout */}
-        <main
-          className={cn(
-            "flex flex-1 flex-col items-center justify-center p-4 pt-16",
-            isWideScreen ? "pr-36" : "pb-36" // Space for history + reaction bar
-          )}
-        >
-          <AnimatePresence mode="wait">
-            {viewState.status === "connecting" ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-center"
-              >
-                <div className="mb-4 mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-                <p className="font-serif text-xl text-amber-200">
-                  {tGame("connecting")}
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="content"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-5xl"
-              >
-                {/* Card + Text Layout - mirrors host layout */}
-                <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-12">
-                  {/* REUSE: CurrentCard component from play/_components */}
-                  <CurrentCard
-                    item={gameState?.currentItem ?? null}
-                    currentNumber={currentCard}
-                    totalCards={totalCards}
-                    showCounter={!isWideScreen}
-                  />
+      {/* ===== MAIN CONTENT (flex-1, takes remaining space) ===== */}
+      <main
+        className={cn(
+          "relative z-10 flex-1 flex items-center justify-center overflow-auto p-4",
+          isWideScreen && "pr-36" // Only add right padding for wide screen history strip
+        )}
+      >
+        <AnimatePresence mode="wait">
+          {viewState.status === "connecting" ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center"
+            >
+              <div className="mb-4 mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+              <p className="font-serif text-xl text-amber-200">
+                {tGame("connecting")}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-5xl"
+            >
+              {/* Card + Text Layout - Responsive */}
+              <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-10">
+                {/* Card - always visible, counter included */}
+                <CurrentCard
+                  item={gameState?.currentItem ?? null}
+                  currentNumber={currentCard}
+                  totalCards={totalCards}
+                  showCounter={true}
+                />
 
-                  {/* REUSE: TextPanel component from play/_components */}
+                {/* TextPanel - hidden on small screens, visible on lg+ */}
+                <div className="hidden lg:block">
                   <TextPanel
                     item={gameState?.currentItem ?? null}
                     currentNumber={currentCard}
                     totalCards={totalCards}
-                    showCounter={isWideScreen}
+                    showCounter={false}
                     showCategory={true}
-                    className="w-full max-w-md lg:mt-8"
+                    className="w-full max-w-md"
                   />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
-        {/* History Strip - Adaptive Layout (mirrors host-display.tsx) */}
-        {historyItems.length > 0 && (
-          <>
-            {isWideScreen ? (
-              /* Wide screens: Vertical strip on right side */
-              <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/40">
-                <HistoryStrip
-                  history={historyItems}
-                  currentItem={gameState?.currentItem ?? null}
-                  maxCards={8}
-                  forceVertical={true}
-                  className="h-full pt-16"
-                />
-              </aside>
-            ) : (
-              /* Standard screens: Horizontal strip above reaction bar */
-              <aside className="fixed bottom-16 left-0 right-0 z-20 border-t border-amber-700/20 bg-amber-950/40 py-2">
-                <HistoryStrip
-                  history={historyItems}
-                  currentItem={gameState?.currentItem ?? null}
-                  maxCards={6}
-                  forceVertical={false}
-                />
-              </aside>
-            )}
-          </>
-        )}
-      </div>
+      {/* ===== WIDE SCREEN: Vertical History Strip (fixed right) ===== */}
+      {isWideScreen && hasHistory && (
+        <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/40">
+          <HistoryStrip
+            history={historyItems}
+            currentItem={gameState?.currentItem ?? null}
+            forceVertical={true}
+            scrollable={true}
+            fadeEdge={true}
+            autoScrollToNewest={true}
+            className="h-full pt-14"
+          />
+        </aside>
+      )}
+
+      {/* ===== STANDARD SCREENS: History Strip (in flow, above reaction bar) ===== */}
+      {!isWideScreen && hasHistory && (
+        <aside className="relative z-10 flex-shrink-0 border-t border-amber-700/30 bg-gradient-to-t from-amber-950/60 to-amber-950/30 py-3 mb-2">
+          {/* 
+            Width constraint: 
+            - Mobile: full width (px-4 provides edge padding)
+            - Tablet+: max-w-3xl (~768px) to match card + text layout
+          */}
+          <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+            <HistoryStrip
+              history={historyItems}
+              currentItem={gameState?.currentItem ?? null}
+              forceVertical={false}
+              scrollable={true}
+              fadeEdge={true}
+              autoScrollToNewest={true}
+            />
+          </div>
+        </aside>
+      )}
+
+      {/* ===== SPACER for fixed ReactionBar ===== */}
+      <div className="h-16 flex-shrink-0" aria-hidden="true" />
+
+      {/* ===== REACTION BAR (fixed at bottom via component's own styles) ===== */}
+      <ReactionBar
+        onReact={sendReaction}
+        isEnabled={viewState.status === "connected" && isGameActive}
+      />
 
       {/* Game finished overlay */}
       <AnimatePresence>
@@ -433,12 +456,6 @@ export default function SpectatorPageClient() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Reaction Bar - NEW spectator-specific component */}
-      <ReactionBar
-        onReact={sendReaction}
-        isEnabled={viewState.status === "connected" && isGameActive}
-      />
     </div>
   );
 }
