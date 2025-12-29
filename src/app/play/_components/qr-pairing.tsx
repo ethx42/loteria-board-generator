@@ -5,14 +5,16 @@
  *
  * Displays a QR code and manual room code for controller pairing.
  * The QR encodes the full join URL for one-scan connection.
+ * Also shows spectator link for audience members.
  *
  * @see SRD §5.9 Session Entry & QR Pairing UI
  * @see FR-002 Host shall display a QR Code containing the Controller URL
  */
 
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check, Smartphone } from "lucide-react";
+import { Copy, Check, Smartphone, Users } from "lucide-react";
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { devWarn } from "@/lib/utils/dev-logger";
 
 interface QRPairingProps {
@@ -31,13 +33,21 @@ export function QRPairing({
   onPlayStandalone,
   isControllerConnected = false,
 }: QRPairingProps) {
+  const t = useTranslations("pairing");
   const [copied, setCopied] = useState(false);
+  const [copiedSpectator, setCopiedSpectator] = useState(false);
 
-  // Build the join URL
+  // Build the join URL for controller
   const joinUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/play/join?room=${roomCode}`
       : `/play/join?room=${roomCode}`;
+
+  // Build spectator URL
+  const spectatorUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/play/spectator?room=${roomCode}`
+      : `/play/spectator?room=${roomCode}`;
 
   const handleCopyCode = useCallback(async () => {
     try {
@@ -49,6 +59,16 @@ export function QRPairing({
       devWarn("QRPairing", "Clipboard API not available");
     }
   }, [roomCode]);
+
+  const handleCopySpectatorUrl = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(spectatorUrl);
+      setCopiedSpectator(true);
+      setTimeout(() => setCopiedSpectator(false), 2000);
+    } catch {
+      devWarn("QRPairing", "Clipboard API not available");
+    }
+  }, [spectatorUrl]);
 
   if (isControllerConnected) {
     return (
@@ -63,6 +83,22 @@ export function QRPairing({
           <p className="mt-1 text-sm text-green-300/70">
             Use your phone to control the game
           </p>
+        </div>
+
+        {/* Spectator link (shown when controller is connected) */}
+        <div className="mt-4 pt-4 border-t border-green-800/30 w-full">
+          <button
+            onClick={handleCopySpectatorUrl}
+            className="flex items-center justify-center gap-2 text-sm text-amber-400/70 hover:text-amber-300 transition-colors group w-full"
+          >
+            <Users className="h-4 w-4" />
+            <span>{t("spectatorLink")}</span>
+            {copiedSpectator ? (
+              <Check className="h-4 w-4 text-green-400" />
+            ) : (
+              <Copy className="h-4 w-4 opacity-50 group-hover:opacity-100" />
+            )}
+          </button>
         </div>
       </div>
     );
@@ -85,10 +121,10 @@ export function QRPairing({
       {/* Instructions */}
       <div className="text-center">
         <p className="text-lg font-medium text-amber-100">
-          Scan to connect your phone
+          {t("scanQr")}
         </p>
         <p className="mt-1 text-sm text-amber-300/60">
-          Or enter the code manually
+          {t("orEnterCode")}
         </p>
       </div>
 
@@ -115,13 +151,31 @@ export function QRPairing({
         </span>
       </p>
 
+      {/* Spectator link */}
+      <div className="flex items-center gap-4 mt-2">
+        <div className="flex-1 h-px bg-amber-700/30" />
+        <button
+          onClick={handleCopySpectatorUrl}
+          className="flex items-center gap-2 text-xs text-amber-400/60 hover:text-amber-300 transition-colors group"
+        >
+          <Users className="h-3 w-3" />
+          <span>{t("spectatorLink")}</span>
+          {copiedSpectator ? (
+            <Check className="h-3 w-3 text-green-400" />
+          ) : (
+            <Copy className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+          )}
+        </button>
+        <div className="flex-1 h-px bg-amber-700/30" />
+      </div>
+
       {/* Skip option */}
       {onPlayStandalone && (
         <button
           onClick={onPlayStandalone}
           className="mt-4 rounded-full border border-amber-600/30 px-6 py-2 text-sm text-amber-300/70 transition-colors hover:border-amber-500 hover:text-amber-200"
         >
-          Play without controller →
+          {t("playStandalone")} →
         </button>
       )}
     </div>
