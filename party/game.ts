@@ -11,7 +11,6 @@
 import type { Room, Connection, Server } from "partykit/server";
 import { createDevLogger } from "../src/lib/utils/dev-logger";
 import {
-  REACTION_EMOJIS,
   isReactionEmoji,
   type ReactionEmoji,
 } from "../src/lib/realtime/types";
@@ -63,9 +62,10 @@ interface GameStateSnapshot {
 
 /**
  * Rate limiting constants for reactions.
+ * Client batches every 400ms, so we allow slightly faster rate limit.
  */
-const REACTION_COOLDOWN_MS = 1000; // 1 second per spectator
-const REACTION_BATCH_MS = 500; // Aggregate every 500ms
+const REACTION_COOLDOWN_MS = 350; // 350ms per spectator (allows batched bursts)
+const REACTION_BATCH_MS = 300; // Aggregate every 300ms for faster feedback
 
 /**
  * Room state maintained by the server.
@@ -163,6 +163,8 @@ interface CloseHistoryMessage extends BaseMessage {
 interface SendReactionMessage extends BaseMessage {
   type: "SEND_REACTION";
   emoji: string;
+  /** Number of reactions (for batched reactions from client) */
+  count?: number;
 }
 
 // v4.0: Sound Preference Sync
@@ -774,6 +776,7 @@ export default class GameRoom implements Server {
   /**
    * Handles SEND_REACTION from a spectator.
    * Implements rate limiting and batching.
+   * Supports optional count field for batched reactions from client.
    */
   private handleReaction(msg: SendReactionMessage, sender: Connection): void {
     // Only spectators can send reactions
@@ -786,7 +789,7 @@ export default class GameRoom implements Server {
       return; // Invalid emoji, silently ignore
     }
 
-    // Rate limiting per spectator
+    // Rate limiting per spectator (allows batched count through)
     const now = Date.now();
     const lastReaction = this.state.reactionCooldowns.get(sender.id) ?? 0;
     if (now - lastReaction < REACTION_COOLDOWN_MS) {
@@ -794,9 +797,14 @@ export default class GameRoom implements Server {
     }
     this.state.reactionCooldowns.set(sender.id, now);
 
-    // Add to buffer
+    // Get count from message (default to 1, max 10 per message for safety)
+    const count = Math.min(Math.max(1, msg.count ?? 1), 10);
+
+    // Add to buffer with count
     const currentCount = this.state.reactionBuffer.get(msg.emoji as ReactionEmoji) ?? 0;
-    this.state.reactionBuffer.set(msg.emoji as ReactionEmoji, currentCount + 1);
+    this.state.reactionBuffer.set(msg.emoji as ReactionEmoji, currentCount + count);
+    
+    log.debug(this.room.id, `Buffered ${count}x ${msg.emoji} from ${sender.id}`);
 
     // Schedule batch broadcast if not already scheduled
     if (!this.reactionTimer) {
