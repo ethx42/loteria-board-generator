@@ -15,7 +15,14 @@
  * @see SRD §5.9 Session Entry & QR Pairing UI
  */
 
-import { Suspense, useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { HostDisplay } from "@/app/play/_components/host-display";
 import { QRPairing } from "@/app/play/_components/qr-pairing";
@@ -169,11 +176,17 @@ function HostPageContent() {
   // ===========================================================================
 
   // Track pending sound command from Controller
-  const [pendingSoundSync, setPendingSoundSync] = useState<PendingSoundSync | null>(null);
+  const [pendingSoundSync, setPendingSoundSync] =
+    useState<PendingSoundSync | null>(null);
 
   // v4.0: Track spectator state
   const [spectatorCount, setSpectatorCount] = useState(0);
-  const [reactions, setReactions] = useState<ReactionBurstMessage["reactions"]>([]);
+  const [reactions, setReactions] = useState<ReactionBurstMessage["reactions"]>(
+    []
+  );
+
+  // v4.0: Track card flip state (for spectator sync)
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const clearPendingSoundSync = useCallback(() => {
     setPendingSoundSync(null);
@@ -208,7 +221,7 @@ function HostPageContent() {
   // ===========================================================================
 
   const broadcastState = useCallback(
-    (session: GameSession) => {
+    (session: GameSession, flipState?: boolean) => {
       // Always broadcast if connected - spectators need state updates too
       if (socket.status !== "connected") {
         log.debug("Not broadcasting - socket not connected");
@@ -219,6 +232,7 @@ function HostPageContent() {
         currentIndex: session.currentIndex,
         status: session.status,
         hasController: socket.controllerConnected,
+        isFlipped: flipState ?? isFlipped,
       });
 
       socket.sendStateUpdate({
@@ -228,9 +242,10 @@ function HostPageContent() {
         status: session.status,
         historyCount: session.history.length,
         history: session.history,
+        isFlipped: flipState ?? isFlipped,
       });
     },
-    [socket]
+    [socket, isFlipped]
   );
 
   // ===========================================================================
@@ -238,6 +253,9 @@ function HostPageContent() {
   // ===========================================================================
 
   const doDrawCard = useCallback(() => {
+    // Reset flip state when drawing a new card
+    setIsFlipped(false);
+
     setState((prev) => {
       if (prev.status !== "pairing" && prev.status !== "playing") return prev;
 
@@ -249,7 +267,8 @@ function HostPageContent() {
           ...session,
           status: "finished" as const,
         };
-        setTimeout(() => broadcastState(newSession), 0);
+        // Broadcast with isFlipped: false (new card)
+        setTimeout(() => broadcastState(newSession, false), 0);
         return { status: "playing", session: newSession };
       }
 
@@ -273,7 +292,8 @@ function HostPageContent() {
         status: newStatus,
       };
 
-      setTimeout(() => broadcastState(newSession), 0);
+      // Broadcast with isFlipped: false (new card)
+      setTimeout(() => broadcastState(newSession, false), 0);
       return { status: "playing", session: newSession };
     });
   }, [broadcastState]);
@@ -321,6 +341,18 @@ function HostPageContent() {
     });
   }, [broadcastState]);
 
+  // Handle flip state change (for spectator sync)
+  const handleFlipChange = useCallback(
+    (newFlipState: boolean) => {
+      setIsFlipped(newFlipState);
+      // Broadcast immediately with the new flip state
+      if (sessionRef.current) {
+        broadcastState(sessionRef.current, newFlipState);
+      }
+    },
+    [broadcastState]
+  );
+
   // Store action refs for message handler
   const actionsRef = useRef({ doDrawCard, doPause, doResume, doReset });
   useEffect(() => {
@@ -354,8 +386,13 @@ function HostPageContent() {
       }
 
       // Sound preference from Controller (scope: host_only or both)
-      if (message.type === "SOUND_PREFERENCE" && message.source === SoundSource.CONTROLLER) {
-        log.log(`Received sound command from controller: enabled=${message.enabled}, scope=${message.scope}`);
+      if (
+        message.type === "SOUND_PREFERENCE" &&
+        message.source === SoundSource.CONTROLLER
+      ) {
+        log.log(
+          `Received sound command from controller: enabled=${message.enabled}, scope=${message.scope}`
+        );
         setPendingSoundSync({
           enabled: message.enabled,
           source: SoundSource.CONTROLLER,
@@ -371,7 +408,9 @@ function HostPageContent() {
 
       // v4.0: Reaction burst from spectators
       if (message.type === "REACTION_BURST") {
-        log.info(`🎉 Received REACTION_BURST: ${JSON.stringify(message.reactions)}`);
+        log.info(
+          `🎉 Received REACTION_BURST: ${JSON.stringify(message.reactions)}`
+        );
         setReactions(message.reactions);
         // Clear reactions after animation starts (longer delay for RAF)
         setTimeout(() => {
@@ -386,14 +425,26 @@ function HostPageContent() {
 
   // Handle sound command from Controller (execute silently and send ACK)
   useEffect(() => {
-    if (pendingSoundSync && pendingSoundSync.source === SoundSource.CONTROLLER) {
-      log.log(`Executing Controller sound command: enabled=${pendingSoundSync.enabled}`);
+    if (
+      pendingSoundSync &&
+      pendingSoundSync.source === SoundSource.CONTROLLER
+    ) {
+      log.log(
+        `Executing Controller sound command: enabled=${pendingSoundSync.enabled}`
+      );
       sound.setEnabled(pendingSoundSync.enabled);
 
       // Send ACK back to Controller so it knows Host's new state
-      log.log(`Sending ACK to Controller: enabled=${pendingSoundSync.enabled}, hasAckFn=${typeof socket.sendSoundPreferenceAck}`);
+      log.log(
+        `Sending ACK to Controller: enabled=${
+          pendingSoundSync.enabled
+        }, hasAckFn=${typeof socket.sendSoundPreferenceAck}`
+      );
       if (socket.sendSoundPreferenceAck) {
-        socket.sendSoundPreferenceAck(pendingSoundSync.enabled, pendingSoundSync.scope);
+        socket.sendSoundPreferenceAck(
+          pendingSoundSync.enabled,
+          pendingSoundSync.scope
+        );
       } else {
         log.error("sendSoundPreferenceAck is not defined on socket!");
       }
@@ -407,7 +458,9 @@ function HostPageContent() {
     if (state.status !== "pairing" && state.status !== "playing") return;
 
     const currentIndex = state.session.currentIndex;
-    log.debug(`[Sound Effect] currentIndex: ${currentIndex}, prevIndex: ${prevIndexRef.current}`);
+    log.debug(
+      `[Sound Effect] currentIndex: ${currentIndex}, prevIndex: ${prevIndexRef.current}`
+    );
     if (currentIndex > prevIndexRef.current && currentIndex >= 0) {
       log.log("[Sound Effect] Playing card sound");
       sound.playCardSound();
@@ -444,7 +497,6 @@ function HostPageContent() {
     }
 
     initSession();
-     
   }, [roomId]);
 
   // ===========================================================================
@@ -488,25 +540,36 @@ function HostPageContent() {
       (state.status === "pairing" || state.status === "playing")
     ) {
       broadcastState(state.session);
-      
+
       // Also send current sound state so Controller knows Host's sound preference
-      log.log(`Sending initial sound state to controller: enabled=${sound.isEnabled}`);
+      log.log(
+        `Sending initial sound state to controller: enabled=${sound.isEnabled}`
+      );
       socket.sendSoundPreferenceAck?.(sound.isEnabled, "local");
-      
+
       hasSentInitialState.current = true;
     }
     if (!socket.controllerConnected) {
       hasSentInitialState.current = false;
     }
-  }, [socket.controllerConnected, state, broadcastState, socket, sound.isEnabled]);
+  }, [
+    socket.controllerConnected,
+    state,
+    broadcastState,
+    socket,
+    sound.isEnabled,
+  ]);
 
   // ===========================================================================
   // PAGE HANDLERS
   // ===========================================================================
 
   const handleDisconnect = useCallback(() => {
+    // Properly close the WebSocket before navigating
+    // This triggers onClose on the server, which notifies controller and spectators
+    socket.disconnect();
     window.location.href = "/play";
-  }, []);
+  }, [socket]);
 
   const handlePlayStandalone = useCallback(() => {
     setState((prev) => {
@@ -573,16 +636,16 @@ function HostPageContent() {
                 socket.status === "connected"
                   ? "bg-green-500"
                   : socket.status === "connecting"
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-red-500"
+                  ? "bg-yellow-500 animate-pulse"
+                  : "bg-red-500"
               }`}
             />
             <span>
               {socket.status === "connected"
                 ? "Room ready"
                 : socket.status === "connecting"
-                  ? "Connecting..."
-                  : "Disconnected"}
+                ? "Connecting..."
+                : "Disconnected"}
             </span>
           </div>
         </div>
@@ -602,6 +665,8 @@ function HostPageContent() {
       onSoundToggle={sound.hostToggle}
       spectatorCount={spectatorCount}
       reactions={reactions}
+      isFlipped={isFlipped}
+      onFlipChange={handleFlipChange}
     />
   );
 }

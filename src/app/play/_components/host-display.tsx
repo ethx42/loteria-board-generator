@@ -73,6 +73,12 @@ interface HostDisplayProps {
 
   /** Whether user prefers reduced motion */
   reducedMotion?: boolean;
+
+  /** v4.0: Current flip state of the card (for spectator sync) */
+  isFlipped?: boolean;
+
+  /** v4.0: Callback when card is flipped (for broadcasting to spectators) */
+  onFlipChange?: (isFlipped: boolean) => void;
 }
 
 // ============================================================================
@@ -118,6 +124,8 @@ export function HostDisplay({
   spectatorCount = 0,
   reactions = [],
   reducedMotion: forcedReducedMotion,
+  isFlipped = false,
+  onFlipChange,
 }: HostDisplayProps) {
   const t = useTranslations("spectator");
   const {
@@ -219,13 +227,16 @@ export function HostDisplay({
         >
           {/* Card + Text Layout */}
           <div className="flex w-full max-w-5xl flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-12">
-            {/* Current Card with flip */}
+            {/* Current Card with flip (host controls flip, broadcasts to spectators) */}
             <CurrentCard
               item={currentItem}
               currentNumber={currentCard}
               totalCards={totalCards}
               showCounter={!isWideScreen}
               reducedMotion={reducedMotion}
+              hostFlipState={isFlipped}
+              onFlipChange={onFlipChange}
+              showTitle={false}
             />
 
             {/* Text Panel (side on desktop) */}
