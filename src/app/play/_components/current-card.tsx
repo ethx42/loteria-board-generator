@@ -19,10 +19,19 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import type { ItemDefinition } from "@/lib/types/game";
+import { resolveImageUrl } from "@/lib/storage/image-url";
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+/**
+ * Card size variants for different contexts.
+ * - "default": Standard size (280px mobile, 320px tablet, 380px desktop)
+ * - "large": Larger size when more space is available (320px mobile, 400px tablet, 480px desktop)
+ * - "auto": Fills available space up to max-width
+ */
+type CardSize = "default" | "large" | "auto";
 
 interface CurrentCardProps {
   /** The current item to display */
@@ -42,6 +51,13 @@ interface CurrentCardProps {
 
   /** Custom className for the container */
   className?: string;
+
+  /**
+   * Card size variant. Defaults to "default".
+   * Use "large" when TextPanel is hidden to utilize more space.
+   * Use "auto" for flexible sizing within a container.
+   */
+  size?: CardSize;
 
   /**
    * External flip state from host (for spectator sync).
@@ -135,6 +151,19 @@ const flipVariants = {
 // COMPONENT
 // ============================================================================
 
+// Size class mappings
+const sizeClasses: Record<CardSize, string> = {
+  default: "w-[280px] md:w-[320px] lg:w-[380px]",
+  large: "w-[320px] md:w-[400px] lg:w-[480px]",
+  auto: "w-full max-w-[480px]",
+};
+
+const sizesAttr: Record<CardSize, string> = {
+  default: "(max-width: 768px) 280px, (max-width: 1024px) 320px, 380px",
+  large: "(max-width: 768px) 320px, (max-width: 1024px) 400px, 480px",
+  auto: "(max-width: 768px) 100vw, 480px",
+};
+
 export function CurrentCard({
   item,
   currentNumber,
@@ -142,6 +171,7 @@ export function CurrentCard({
   showCounter = true,
   reducedMotion = false,
   className = "",
+  size = "default",
   hostFlipState,
   onFlipChange,
   showTitle = true,
@@ -231,20 +261,22 @@ export function CurrentCard({
             >
               {/* Card Front */}
               <div
-                className="relative w-[280px] md:w-[320px] lg:w-[380px]"
+                className={`relative ${sizeClasses[size]}`}
                 style={{
-                  aspectRatio: "2/3",
+                  aspectRatio: "4/5",
                   backfaceVisibility: "hidden",
                 }}
               >
                 {/* Card Image (FR-030) */}
-                <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 shadow-2xl ring-1 ring-black/10">
+                <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/10">
+                  {/* Skeleton loader shown while image loads */}
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-amber-800/50 to-amber-900/50" />
                   <Image
-                    src={item.imageUrl}
+                    src={resolveImageUrl(item.imageUrl)}
                     alt={item.name}
                     fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 280px, (max-width: 1024px) 320px, 380px"
+                    className="object-cover transition-opacity duration-300"
+                    sizes={sizesAttr[size]}
                     priority
                   />
 
@@ -309,9 +341,9 @@ export function CurrentCard({
 
               {/* Card Back (FR-034) */}
               <div
-                className="absolute inset-0 w-[280px] md:w-[320px] lg:w-[380px]"
+                className={`absolute inset-0 ${sizeClasses[size]}`}
                 style={{
-                  aspectRatio: "2/3",
+                  aspectRatio: "4/5",
                   backfaceVisibility: "hidden",
                   transform: "rotateY(180deg)",
                 }}
@@ -341,8 +373,8 @@ export function CurrentCard({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex h-full w-[280px] flex-col items-center justify-center rounded-2xl border-4 border-dashed border-amber-200/30 bg-amber-50/10 md:w-[320px] lg:w-[380px]"
-            style={{ aspectRatio: "2/3" }}
+            className={`flex h-full ${sizeClasses[size]} flex-col items-center justify-center rounded-2xl border-4 border-dashed border-amber-200/30 bg-amber-50/10`}
+            style={{ aspectRatio: "4/5" }}
           >
             <div className="text-center text-amber-200/60">
               <svg
