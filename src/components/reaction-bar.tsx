@@ -63,17 +63,21 @@ export function ReactionBar({
   className,
 }: ReactionBarProps) {
   const t = useTranslations("spectator");
-  
+
   // Track pending reactions to batch
   const pendingReactionsRef = useRef<Map<ReactionEmoji, number>>(new Map());
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Track last click time per emoji for visual cooldown
   const lastClickRef = useRef<Map<ReactionEmoji, number>>(new Map());
-  
-  // Track which emoji was just pressed for ring animation
-  const [pressedEmoji, setPressedEmoji] = useState<ReactionEmoji | null>(null);
+
+  // Track which emoji was just pressed for ring animation (with unique key for animation reset)
+  const [pressedState, setPressedState] = useState<{
+    emoji: ReactionEmoji;
+    key: number;
+  } | null>(null);
   const pressedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const keyCounterRef = useRef(0);
 
   // Flush pending reactions to server
   const flushReactions = useCallback(() => {
@@ -93,7 +97,7 @@ export function ReactionBar({
   // Schedule a batch flush
   const scheduleBatchFlush = useCallback(() => {
     if (batchTimerRef.current) return; // Already scheduled
-    
+
     batchTimerRef.current = setTimeout(() => {
       flushReactions();
     }, batchIntervalMs);
@@ -104,11 +108,12 @@ export function ReactionBar({
       if (!isEnabled) return;
 
       // Always show visual feedback immediately (no cooldown for visuals)
-      setPressedEmoji(emoji);
+      keyCounterRef.current += 1;
+      setPressedState({ emoji, key: keyCounterRef.current });
       if (pressedTimeoutRef.current) {
         clearTimeout(pressedTimeoutRef.current);
       }
-      pressedTimeoutRef.current = setTimeout(() => setPressedEmoji(null), 150);
+      pressedTimeoutRef.current = setTimeout(() => setPressedState(null), 150);
 
       // Check cooldown only for queueing reactions
       const now = Date.now();
@@ -172,74 +177,73 @@ export function ReactionBar({
 
   return (
     <footer
-        className={cn(
-          "fixed bottom-0 inset-x-0 z-40 safe-area-inset-bottom",
-          "bg-gradient-to-t from-amber-950/95 via-amber-950/90 to-transparent",
-          "backdrop-blur-sm pt-6 pb-4 px-4",
-          className
-        )}
-      >
-        {/* Reaction buttons */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3">
-          {REACTION_EMOJIS.map((emoji, index) => (
-            <motion.button
-              key={emoji}
-              onClick={() => handleReact(emoji)}
-              disabled={!isEnabled}
-              whileTap={isEnabled ? { scale: 0.85 } : undefined}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0,
-                scale: pressedEmoji === emoji ? 1.12 : 1,
-              }}
-              transition={{ 
-                delay: index * 0.05,
-                scale: { duration: 0.1 },
-              }}
-              className={cn(
-                "relative text-2xl sm:text-3xl p-2 sm:p-3 rounded-full",
-                "transition-colors duration-100",
-                "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-amber-950",
-                isEnabled
-                  ? "hover:bg-amber-800/50 cursor-pointer"
-                  : "opacity-50 cursor-not-allowed"
+      className={cn(
+        "fixed bottom-0 inset-x-0 z-40 safe-area-inset-bottom",
+        "bg-linear-to-t from-amber-950/95 via-amber-950/90 to-transparent",
+        "backdrop-blur-sm pt-6 pb-4 px-4",
+        className
+      )}
+    >
+      {/* Reaction buttons */}
+      <div className="flex items-center justify-center gap-2 sm:gap-3">
+        {REACTION_EMOJIS.map((emoji, index) => (
+          <motion.button
+            key={emoji}
+            onClick={() => handleReact(emoji)}
+            disabled={!isEnabled}
+            whileTap={isEnabled ? { scale: 0.85 } : undefined}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: pressedState?.emoji === emoji ? 1.12 : 1,
+            }}
+            transition={{
+              delay: index * 0.05,
+              scale: { duration: 0.1 },
+            }}
+            className={cn(
+              "relative text-2xl sm:text-3xl p-2 sm:p-3 rounded-full",
+              "transition-colors duration-100",
+              "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-amber-950",
+              isEnabled
+                ? "hover:bg-amber-800/50 cursor-pointer"
+                : "opacity-50 cursor-not-allowed"
+            )}
+            style={{
+              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+            }}
+            aria-label={t("reactWith", { emoji })}
+            aria-disabled={!isEnabled}
+          >
+            {emoji}
+
+            {/* Ripple ring on press */}
+            <AnimatePresence>
+              {pressedState?.emoji === emoji && (
+                <motion.div
+                  key={`ring-${pressedState.key}`}
+                  initial={{ scale: 1, opacity: 0.6 }}
+                  animate={{ scale: 1.4, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute inset-0 rounded-full border-2 border-amber-400 pointer-events-none"
+                />
               )}
-              style={{
-                textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-              }}
-              aria-label={t("reactWith", { emoji })}
-              aria-disabled={!isEnabled}
-            >
-              {emoji}
+            </AnimatePresence>
+          </motion.button>
+        ))}
+      </div>
 
-              {/* Ripple ring on press */}
-              <AnimatePresence>
-                {pressedEmoji === emoji && (
-                  <motion.div
-                    key={`ring-${Date.now()}`}
-                    initial={{ scale: 1, opacity: 0.6 }}
-                    animate={{ scale: 1.4, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="absolute inset-0 rounded-full border-2 border-amber-400 pointer-events-none"
-                  />
-                )}
-              </AnimatePresence>
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Keyboard hint (desktop only) */}
-        <div className="hidden sm:flex justify-center mt-3 gap-4 text-[10px] text-amber-500/40">
-          {REACTION_EMOJIS.map((emoji, index) => (
-            <span key={emoji} className="font-mono">
-              {index + 1}
-            </span>
-          ))}
-        </div>
-      </footer>
+      {/* Keyboard hint (desktop only) */}
+      <div className="hidden sm:flex justify-center mt-3 gap-4 text-[10px] text-amber-500/40">
+        {REACTION_EMOJIS.map((emoji, index) => (
+          <span key={emoji} className="font-mono">
+            {index + 1}
+          </span>
+        ))}
+      </div>
+    </footer>
   );
 }
 
 export default ReactionBar;
-
