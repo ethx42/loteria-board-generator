@@ -21,7 +21,10 @@
 
 import { useState, useCallback, useEffect, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { GameSession, ItemDefinition } from "@/lib/types/game";
+import type { ReactionBurstMessage } from "@/lib/realtime/types";
 import { useHostUIState } from "@/lib/game/state-machine";
 import { createDevLogger } from "@/lib/utils/dev-logger";
 import { CurrentCard } from "./current-card";
@@ -29,6 +32,7 @@ import { TextPanel } from "./text-panel";
 import { HistoryStrip } from "./history-strip";
 import { ControlsBar } from "./controls-bar";
 import { HistoryModal } from "./history-modal";
+import { ReactionsOverlay } from "@/components/reactions-overlay";
 
 const log = createDevLogger("HostDisplay");
 
@@ -60,6 +64,12 @@ interface HostDisplayProps {
 
   /** v4.0: Callback when sound toggle clicked (from useSoundSync.hostToggle) */
   onSoundToggle?: () => void;
+
+  /** v4.0: Number of spectators watching */
+  spectatorCount?: number;
+
+  /** v4.0: Reaction burst from spectators */
+  reactions?: ReactionBurstMessage["reactions"];
 
   /** Whether user prefers reduced motion */
   reducedMotion?: boolean;
@@ -105,8 +115,11 @@ export function HostDisplay({
   onDisconnect,
   isSoundEnabled,
   onSoundToggle,
+  spectatorCount = 0,
+  reactions = [],
   reducedMotion: forcedReducedMotion,
 }: HostDisplayProps) {
+  const t = useTranslations("spectator");
   const {
     state: uiState,
     toggleFullscreen,
@@ -349,6 +362,31 @@ export function HostDisplay({
         currentItem={currentItem}
         reducedMotion={reducedMotion}
       />
+
+      {/* v4.0: Spectator count indicator */}
+      <AnimatePresence>
+        {spectatorCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="fixed top-4 right-4 z-30 flex items-center gap-2 rounded-full bg-amber-900/80 px-4 py-2 backdrop-blur-sm"
+          >
+            <Users className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-medium text-amber-200">
+              {t("spectatorCount", { count: spectatorCount })}
+            </span>
+            {/* Live indicator */}
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* v4.0: Reactions overlay */}
+      <ReactionsOverlay reactions={reactions} />
     </div>
   );
 }

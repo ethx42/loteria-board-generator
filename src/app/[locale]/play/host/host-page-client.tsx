@@ -22,7 +22,7 @@ import { QRPairing } from "@/app/play/_components/qr-pairing";
 import { loadDemoDeck } from "@/lib/game/deck-loader";
 import { useGameSocket } from "@/lib/realtime/partykit-client";
 import { useSoundSync, SoundSource } from "@/lib/audio";
-import { isGameCommand } from "@/lib/realtime/types";
+import { isGameCommand, type ReactionBurstMessage } from "@/lib/realtime/types";
 import { createDevLogger } from "@/lib/utils/dev-logger";
 import type {
   GameSession,
@@ -171,6 +171,10 @@ function HostPageContent() {
   // Track pending sound command from Controller
   const [pendingSoundSync, setPendingSoundSync] = useState<PendingSoundSync | null>(null);
 
+  // v4.0: Track spectator state
+  const [spectatorCount, setSpectatorCount] = useState(0);
+  const [reactions, setReactions] = useState<ReactionBurstMessage["reactions"]>([]);
+
   const clearPendingSoundSync = useCallback(() => {
     setPendingSoundSync(null);
   }, []);
@@ -205,14 +209,16 @@ function HostPageContent() {
 
   const broadcastState = useCallback(
     (session: GameSession) => {
-      if (socket.status !== "connected" || !socket.controllerConnected) {
-        log.debug("Not broadcasting - no controller connected");
+      // Always broadcast if connected - spectators need state updates too
+      if (socket.status !== "connected") {
+        log.debug("Not broadcasting - socket not connected");
         return;
       }
 
-      log.log("Broadcasting state to controller", {
+      log.log("Broadcasting state", {
         currentIndex: session.currentIndex,
         status: session.status,
+        hasController: socket.controllerConnected,
       });
 
       socket.sendStateUpdate({
@@ -355,6 +361,23 @@ function HostPageContent() {
           scope: message.scope,
         });
       }
+
+      // v4.0: Spectator count updates
+      if (message.type === "SPECTATOR_COUNT") {
+        log.debug(`Spectator count updated: ${message.count}`);
+        setSpectatorCount(message.count);
+      }
+
+      // v4.0: Reaction burst from spectators
+      if (message.type === "REACTION_BURST") {
+        log.info(`🎉 Received REACTION_BURST: ${JSON.stringify(message.reactions)}`);
+        setReactions(message.reactions);
+        // Clear reactions after animation starts (longer delay for RAF)
+        setTimeout(() => {
+          log.debug("Clearing reactions state");
+          setReactions([]);
+        }, 200);
+      }
     });
 
     return unsubscribe;
@@ -420,7 +443,7 @@ function HostPageContent() {
     }
 
     initSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [roomId]);
 
   // ===========================================================================
@@ -487,9 +510,11 @@ function HostPageContent() {
   const handlePlayStandalone = useCallback(() => {
     setState((prev) => {
       if (prev.status !== "pairing") return prev;
+      // Broadcast initial state for spectators
+      setTimeout(() => broadcastState(prev.session), 0);
       return { status: "playing", session: prev.session };
     });
-  }, []);
+  }, [broadcastState]);
 
   // Wrap draw card with audio init
   const handleDrawCard = useCallback(async () => {
@@ -574,6 +599,8 @@ function HostPageContent() {
       onDisconnect={handleDisconnect}
       isSoundEnabled={sound.isEnabled}
       onSoundToggle={sound.hostToggle}
+      spectatorCount={spectatorCount}
+      reactions={reactions}
     />
   );
 }
