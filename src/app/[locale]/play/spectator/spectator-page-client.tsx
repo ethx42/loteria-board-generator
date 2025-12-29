@@ -6,16 +6,20 @@
  * Spectator view that:
  * 1. Connects to a room as spectator
  * 2. Displays the current card (reusing existing components)
- * 3. Shows history strip
+ * 3. Shows history strip (adaptive layout like host)
  * 4. Allows sending emoji reactions
  *
  * This component reuses existing components from play/_components/
  * to maintain consistency and avoid duplication (DRY principle).
  *
+ * ## Layout Strategy (mirrors host-display.tsx)
+ * - Wide screens (≥1400px): Vertical history strip on right
+ * - Standard screens: Horizontal strip above reaction bar
+ *
  * @see SRD §6.3 Spectator Mode
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Users, WifiOff, AlertCircle, Loader2 } from "lucide-react";
@@ -257,6 +261,21 @@ export default function SpectatorPageClient() {
   }, [roomId, connect, router]);
 
   // ========================================================================
+  // ADAPTIVE LAYOUT (mirrors host-display.tsx)
+  // ========================================================================
+
+  const [isWideScreen, setIsWideScreen] = useState(false);
+
+  useEffect(() => {
+    const checkWidth = () => {
+      setIsWideScreen(window.innerWidth >= 1400);
+    };
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
+
+  // ========================================================================
   // RENDER
   // ========================================================================
 
@@ -288,12 +307,12 @@ export default function SpectatorPageClient() {
   const totalCards = gameState?.totalItems ?? 0;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-amber-950 via-amber-900 to-amber-950 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-amber-950 via-amber-900 to-amber-950">
       {/* Background overlay */}
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      {/* Header */}
-      <header className="relative z-20 flex items-center justify-between p-4">
+      {/* Header - fixed position for consistency */}
+      <header className="fixed top-0 inset-x-0 z-30 flex items-center justify-between p-4 bg-gradient-to-b from-amber-950/80 to-transparent backdrop-blur-sm">
         <ConnectionBadge
           status={viewState.status}
           spectatorCount={spectatorCount}
@@ -310,65 +329,89 @@ export default function SpectatorPageClient() {
         </div>
       </header>
 
-      {/* Main content - Current Card */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 pb-28">
-        <AnimatePresence mode="wait">
-          {viewState.status === "connecting" ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center"
-            >
-              <div className="mb-4 mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-              <p className="font-serif text-xl text-amber-200">
-                {tGame("connecting")}
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="content"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-full max-w-5xl"
-            >
-              {/* Card + Text Layout - mirrors host layout */}
-              <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-12">
-                {/* REUSE: CurrentCard component from play/_components */}
-                <CurrentCard
-                  item={gameState?.currentItem ?? null}
-                  currentNumber={currentCard}
-                  totalCards={totalCards}
-                  showCounter={true}
-                />
-
-                {/* REUSE: TextPanel component from play/_components */}
-                <TextPanel
-                  item={gameState?.currentItem ?? null}
-                  currentNumber={currentCard}
-                  totalCards={totalCards}
-                  showCounter={false}
-                  showCategory={true}
-                  className="w-full max-w-md lg:mt-8"
-                />
-              </div>
-            </motion.div>
+      {/* Main Layout Container */}
+      <div className="relative flex h-screen w-full">
+        {/* Main content area - adapts to history strip layout */}
+        <main
+          className={cn(
+            "flex flex-1 flex-col items-center justify-center p-4 pt-20",
+            isWideScreen ? "pr-36" : "pb-48" // Space for history + reaction bar
           )}
-        </AnimatePresence>
-      </main>
+        >
+          <AnimatePresence mode="wait">
+            {viewState.status === "connecting" ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center"
+              >
+                <div className="mb-4 mx-auto h-12 w-12 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+                <p className="font-serif text-xl text-amber-200">
+                  {tGame("connecting")}
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-5xl"
+              >
+                {/* Card + Text Layout - mirrors host layout */}
+                <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-12">
+                  {/* REUSE: CurrentCard component from play/_components */}
+                  <CurrentCard
+                    item={gameState?.currentItem ?? null}
+                    currentNumber={currentCard}
+                    totalCards={totalCards}
+                    showCounter={!isWideScreen}
+                  />
 
-      {/* History Strip - REUSE from play/_components */}
-      {historyItems.length > 0 && (
-        <div className="relative z-10 px-4 pb-32">
-          <HistoryStrip
-            history={historyItems}
-            currentItem={gameState?.currentItem ?? null}
-            maxCards={6}
-            forceVertical={false}
-          />
-        </div>
-      )}
+                  {/* REUSE: TextPanel component from play/_components */}
+                  <TextPanel
+                    item={gameState?.currentItem ?? null}
+                    currentNumber={currentCard}
+                    totalCards={totalCards}
+                    showCounter={isWideScreen}
+                    showCategory={true}
+                    className="w-full max-w-md lg:mt-8"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* History Strip - Adaptive Layout (mirrors host-display.tsx) */}
+        {historyItems.length > 0 && (
+          <>
+            {isWideScreen ? (
+              /* Wide screens: Vertical strip on right side */
+              <aside className="fixed right-0 top-0 h-full w-32 z-20 border-l border-amber-700/20 bg-amber-950/50 backdrop-blur-sm">
+                <HistoryStrip
+                  history={historyItems}
+                  currentItem={gameState?.currentItem ?? null}
+                  maxCards={8}
+                  forceVertical={true}
+                  className="h-full pt-20"
+                />
+              </aside>
+            ) : (
+              /* Standard screens: Horizontal strip above reaction bar */
+              <aside className="fixed bottom-24 left-0 right-0 z-20 border-t border-amber-700/20 bg-amber-950/60 py-3 backdrop-blur-sm">
+                <HistoryStrip
+                  history={historyItems}
+                  currentItem={gameState?.currentItem ?? null}
+                  maxCards={6}
+                  forceVertical={false}
+                />
+              </aside>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Game finished overlay */}
       <AnimatePresence>

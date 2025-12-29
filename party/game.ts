@@ -10,10 +10,7 @@
 
 import type { Room, Connection, Server } from "partykit/server";
 import { createDevLogger } from "../src/lib/utils/dev-logger";
-import {
-  isReactionEmoji,
-  type ReactionEmoji,
-} from "../src/lib/realtime/types";
+import { isReactionEmoji, type ReactionEmoji } from "../src/lib/realtime/types";
 
 // Scoped logger for GameRoom (only outputs in development)
 const baseLog = createDevLogger("GameRoom");
@@ -21,20 +18,23 @@ const baseLog = createDevLogger("GameRoom");
 // Helper to add timestamps to logs
 function getTimestamp() {
   const now = new Date();
-  return `${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+  return `${now.toLocaleTimeString()}.${now
+    .getMilliseconds()
+    .toString()
+    .padStart(3, "0")}`;
 }
 
 // Wrap logger with timestamps
 const log = {
-  log: (roomId: string, msg: string, ...args: unknown[]) => 
+  log: (roomId: string, msg: string, ...args: unknown[]) =>
     baseLog.log(`[${getTimestamp()}] [${roomId}] ${msg}`, ...args),
-  info: (roomId: string, msg: string, ...args: unknown[]) => 
+  info: (roomId: string, msg: string, ...args: unknown[]) =>
     baseLog.info(`[${getTimestamp()}] [${roomId}] ${msg}`, ...args),
-  warn: (roomId: string, msg: string, ...args: unknown[]) => 
+  warn: (roomId: string, msg: string, ...args: unknown[]) =>
     baseLog.warn(`[${getTimestamp()}] [${roomId}] ${msg}`, ...args),
-  error: (roomId: string, msg: string, ...args: unknown[]) => 
+  error: (roomId: string, msg: string, ...args: unknown[]) =>
     baseLog.error(`[${getTimestamp()}] [${roomId}] ${msg}`, ...args),
-  debug: (roomId: string, msg: string, ...args: unknown[]) => 
+  debug: (roomId: string, msg: string, ...args: unknown[]) =>
     baseLog.debug(`[${getTimestamp()}] [${roomId}] ${msg}`, ...args),
 };
 
@@ -245,7 +245,6 @@ function getClientRole(conn: Connection): ClientRole | null {
   }
 }
 
-
 /**
  * Safely parses JSON message.
  */
@@ -318,15 +317,19 @@ export default class GameRoom implements Server {
    */
   onConnect(conn: Connection): void {
     const role = getClientRole(conn);
-    
-    log.info(this.room.id, `Connection attempt - role: ${role || "NONE"}, uri: ${conn.uri}`);
+
+    log.info(
+      this.room.id,
+      `Connection attempt - role: ${role || "NONE"}, uri: ${conn.uri}`
+    );
 
     if (!role) {
       log.warn(this.room.id, `Invalid role, closing connection`);
       send(conn, {
         type: "ERROR",
         code: "INVALID_ROLE",
-        message: "Connection must specify role (host, controller, or spectator)",
+        message:
+          "Connection must specify role (host, controller, or spectator)",
       });
       conn.close(4000, "Invalid role");
       return;
@@ -351,7 +354,7 @@ export default class GameRoom implements Server {
    */
   onClose(conn: Connection): void {
     log.info(this.room.id, `Connection closed - id: ${conn.id}`);
-    
+
     if (conn.id === this.state.hostId) {
       this.handleHostDisconnect();
     } else if (conn.id === this.state.controllerId) {
@@ -381,7 +384,10 @@ export default class GameRoom implements Server {
       if (this.reactionTimer) {
         clearTimeout(this.reactionTimer);
         this.reactionTimer = null;
-        log.debug(this.room.id, "Cleaned up reaction timer - no active connections");
+        log.debug(
+          this.room.id,
+          "Cleaned up reaction timer - no active connections"
+        );
       }
 
       // Clear reaction buffer and cooldowns
@@ -501,8 +507,11 @@ export default class GameRoom implements Server {
 
   private handleControllerConnect(conn: Connection): void {
     log.info(this.room.id, `Controller attempting to connect: ${conn.id}`);
-    log.debug(this.room.id, `Current state - hostId: ${this.state.hostId}, controllerId: ${this.state.controllerId}`);
-    
+    log.debug(
+      this.room.id,
+      `Current state - hostId: ${this.state.hostId}, controllerId: ${this.state.controllerId}`
+    );
+
     // Check if there's already a controller
     if (this.state.controllerId) {
       const existingController = this.room.getConnection(
@@ -619,7 +628,10 @@ export default class GameRoom implements Server {
     // Broadcast updated spectator count
     this.broadcastSpectatorCount();
 
-    log.info(this.room.id, `Spectator connected: ${conn.id} (total: ${this.state.spectatorIds.size})`);
+    log.info(
+      this.room.id,
+      `Spectator connected: ${conn.id} (total: ${this.state.spectatorIds.size})`
+    );
   }
 
   /**
@@ -627,24 +639,29 @@ export default class GameRoom implements Server {
    */
   private handleSpectatorDisconnect(connId: string): void {
     this.state.spectatorIds.delete(connId);
-    
+
     // Clean up reaction cooldown for this spectator
     this.state.reactionCooldowns.delete(connId);
 
     // Broadcast updated count
     this.broadcastSpectatorCount();
 
-    log.info(this.room.id, `Spectator disconnected: ${connId} (remaining: ${this.state.spectatorIds.size})`);
+    log.info(
+      this.room.id,
+      `Spectator disconnected: ${connId} (remaining: ${this.state.spectatorIds.size})`
+    );
   }
 
   /**
    * Broadcasts current spectator count to all clients.
    */
   private broadcastSpectatorCount(): void {
-    this.room.broadcast(JSON.stringify({
-      type: "SPECTATOR_COUNT",
-      count: this.state.spectatorIds.size,
-    }));
+    this.room.broadcast(
+      JSON.stringify({
+        type: "SPECTATOR_COUNT",
+        count: this.state.spectatorIds.size,
+      })
+    );
   }
 
   // ==========================================================================
@@ -736,7 +753,10 @@ export default class GameRoom implements Server {
    */
   private handleOpenHistory(sender: Connection): void {
     // Only Host or Controller can open history
-    if (sender.id !== this.state.hostId && sender.id !== this.state.controllerId) {
+    if (
+      sender.id !== this.state.hostId &&
+      sender.id !== this.state.controllerId
+    ) {
       return; // Silently ignore from spectators
     }
 
@@ -751,7 +771,12 @@ export default class GameRoom implements Server {
       send(host, { type: "OPEN_HISTORY" });
     }
 
-    log.debug(this.room.id, `History modal opened by ${sender.id === this.state.hostId ? "host" : "controller"}`);
+    log.debug(
+      this.room.id,
+      `History modal opened by ${
+        sender.id === this.state.hostId ? "host" : "controller"
+      }`
+    );
   }
 
   /**
@@ -760,7 +785,10 @@ export default class GameRoom implements Server {
    */
   private handleCloseHistory(sender: Connection): void {
     // Only Host or Controller can close history
-    if (sender.id !== this.state.hostId && sender.id !== this.state.controllerId) {
+    if (
+      sender.id !== this.state.hostId &&
+      sender.id !== this.state.controllerId
+    ) {
       return; // Silently ignore from spectators
     }
 
@@ -775,7 +803,12 @@ export default class GameRoom implements Server {
       send(host, { type: "CLOSE_HISTORY" });
     }
 
-    log.debug(this.room.id, `History modal closed by ${sender.id === this.state.hostId ? "host" : "controller"}`);
+    log.debug(
+      this.room.id,
+      `History modal closed by ${
+        sender.id === this.state.hostId ? "host" : "controller"
+      }`
+    );
   }
 
   // ==========================================================================
@@ -810,10 +843,17 @@ export default class GameRoom implements Server {
     const count = Math.min(Math.max(1, msg.count ?? 1), 10);
 
     // Add to buffer with count
-    const currentCount = this.state.reactionBuffer.get(msg.emoji as ReactionEmoji) ?? 0;
-    this.state.reactionBuffer.set(msg.emoji as ReactionEmoji, currentCount + count);
-    
-    log.debug(this.room.id, `Buffered ${count}x ${msg.emoji} from ${sender.id}`);
+    const currentCount =
+      this.state.reactionBuffer.get(msg.emoji as ReactionEmoji) ?? 0;
+    this.state.reactionBuffer.set(
+      msg.emoji as ReactionEmoji,
+      currentCount + count
+    );
+
+    log.debug(
+      this.room.id,
+      `Buffered ${count}x ${msg.emoji} from ${sender.id}`
+    );
 
     // Schedule batch broadcast if not already scheduled
     if (!this.reactionTimer) {
@@ -842,13 +882,18 @@ export default class GameRoom implements Server {
     this.state.lastReactionBroadcast = Date.now();
 
     // Broadcast to all
-    this.room.broadcast(JSON.stringify({
-      type: "REACTION_BURST",
-      reactions,
-      timestamp: Date.now(),
-    }));
+    this.room.broadcast(
+      JSON.stringify({
+        type: "REACTION_BURST",
+        reactions,
+        timestamp: Date.now(),
+      })
+    );
 
-    log.debug(this.room.id, `Broadcast reaction burst: ${JSON.stringify(reactions)}`);
+    log.debug(
+      this.room.id,
+      `Broadcast reaction burst: ${JSON.stringify(reactions)}`
+    );
   }
 
   // ==========================================================================
@@ -871,9 +916,15 @@ export default class GameRoom implements Server {
    * - scope: "host_only" → Host receives and executes (Controller unchanged)
    * - scope: "both" → Host receives and executes (Controller already changed)
    */
-  private handleSoundPreference(msg: SoundPreferenceMessage, sender: Connection): void {
+  private handleSoundPreference(
+    msg: SoundPreferenceMessage,
+    sender: Connection
+  ): void {
     // Only Host or Controller can send sound preferences
-    if (sender.id !== this.state.hostId && sender.id !== this.state.controllerId) {
+    if (
+      sender.id !== this.state.hostId &&
+      sender.id !== this.state.controllerId
+    ) {
       return; // Silently ignore from spectators
     }
 
@@ -881,7 +932,10 @@ export default class GameRoom implements Server {
     if (sender.id === this.state.hostId && this.state.controllerId) {
       const controller = this.room.getConnection(this.state.controllerId);
       send(controller, msg);
-      log.debug(this.room.id, `Sound preference relayed to controller: enabled=${msg.enabled}`);
+      log.debug(
+        this.room.id,
+        `Sound preference relayed to controller: enabled=${msg.enabled}`
+      );
     }
     // Controller sends to Host
     else if (sender.id === this.state.controllerId && this.state.hostId) {
@@ -889,7 +943,10 @@ export default class GameRoom implements Server {
       if (msg.scope === "host_only" || msg.scope === "both") {
         const host = this.room.getConnection(this.state.hostId);
         send(host, msg);
-        log.debug(this.room.id, `Sound preference command sent to host: enabled=${msg.enabled}, scope=${msg.scope}`);
+        log.debug(
+          this.room.id,
+          `Sound preference command sent to host: enabled=${msg.enabled}, scope=${msg.scope}`
+        );
       }
       // scope: "local" → No relay needed, Controller-only change
     }
@@ -901,9 +958,15 @@ export default class GameRoom implements Server {
    *
    * @direction Host→Server→Controller
    */
-  private handleSoundPreferenceAck(msg: SoundPreferenceAckMessage, sender: Connection): void {
-    log.log(this.room.id, `Received SOUND_PREFERENCE_ACK from Host: enabled=${msg.enabled}`);
-    
+  private handleSoundPreferenceAck(
+    msg: SoundPreferenceAckMessage,
+    sender: Connection
+  ): void {
+    log.log(
+      this.room.id,
+      `Received SOUND_PREFERENCE_ACK from Host: enabled=${msg.enabled}`
+    );
+
     // Only Host can send ACK
     if (sender.id !== this.state.hostId) {
       log.warn(this.room.id, `ACK rejected - sender is not host`);
@@ -915,9 +978,15 @@ export default class GameRoom implements Server {
       const controller = this.room.getConnection(this.state.controllerId);
       if (controller) {
         send(controller, msg);
-        log.log(this.room.id, `ACK relayed to controller: enabled=${msg.enabled}`);
+        log.log(
+          this.room.id,
+          `ACK relayed to controller: enabled=${msg.enabled}`
+        );
       } else {
-        log.warn(this.room.id, `Cannot relay ACK - controller connection not found`);
+        log.warn(
+          this.room.id,
+          `Cannot relay ACK - controller connection not found`
+        );
       }
     } else {
       log.warn(this.room.id, `Cannot relay ACK - no controller connected`);
