@@ -12,6 +12,10 @@
  * - Clicks are batched and sent to server every 400ms
  * - This reduces server load while maintaining responsiveness
  *
+ * UX Features:
+ * - Keyboard shortcuts (1-6) with tooltip hints on hover
+ * - Tooltips only appear on desktop (hidden on touch devices)
+ *
  * @module components/reaction-bar
  * @see SRD §6.3 Spectator Mode
  */
@@ -19,9 +23,16 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { Keyboard } from "lucide-react";
 import { REACTION_EMOJIS, type ReactionEmoji } from "@/lib/realtime/types";
 import { cn } from "@/lib/utils";
 import { createDevLogger } from "@/lib/utils/dev-logger";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const log = createDevLogger("ReactionBar");
 
@@ -176,82 +187,78 @@ export function ReactionBar({
   }, [flushReactions]);
 
   return (
-    <footer
-      className={cn(
-        "fixed bottom-0 inset-x-0 z-40 safe-area-inset-bottom",
-        "bg-linear-to-t from-amber-950/90 to-transparent",
-        "pt-3 pb-3 px-4",
-        className
-      )}
-    >
-      {/* Reaction buttons */}
-      <div className="flex items-center justify-center gap-2 sm:gap-3">
-        {REACTION_EMOJIS.map((emoji, index) => (
-          <motion.button
-            key={emoji}
-            onClick={() => handleReact(emoji)}
-            disabled={!isEnabled}
-            whileTap={isEnabled ? { scale: 0.85 } : undefined}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: pressedState?.emoji === emoji ? 1.12 : 1,
-            }}
-            transition={{
-              delay: index * 0.05,
-              scale: { duration: 0.1 },
-            }}
-            className={cn(
-              "relative text-2xl sm:text-3xl p-2 sm:p-3 rounded-full",
-              "transition-colors duration-100",
-              "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-amber-950",
-              isEnabled
-                ? "hover:bg-amber-800/50 cursor-pointer"
-                : "opacity-50 cursor-not-allowed"
-            )}
-            style={{
-              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-            }}
-            aria-label={t("reactWith", { emoji })}
-            aria-disabled={!isEnabled}
-          >
-            {emoji}
-
-            {/* Ripple ring on press */}
-            <AnimatePresence>
-              {pressedState?.emoji === emoji && (
-                <motion.div
-                  key={`ring-${pressedState.key}`}
-                  initial={{ scale: 1, opacity: 0.6 }}
-                  animate={{ scale: 1.4, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-full border-2 border-amber-400 pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Keyboard hint (desktop only) - positioned to align under buttons */}
-      <div
-        className="hidden sm:flex justify-center text-[10px] text-amber-500/40"
-        style={{ marginTop: "-4px" }}
+    <TooltipProvider delayDuration={400}>
+      <footer
+        className={cn(
+          "fixed bottom-0 inset-x-0 z-40 safe-area-inset-bottom",
+          "bg-linear-to-t from-amber-950/60 to-amber-950/30", // Same as history strip (no border)
+          "pt-3 pb-3 px-4",
+          className
+        )}
       >
-        <div className="flex gap-3">
+        {/* Reaction buttons with tooltip hints */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           {REACTION_EMOJIS.map((emoji, index) => (
-            <span
-              key={emoji}
-              className="font-mono text-center"
-              style={{ width: "54px" }} // Match button width (text-3xl + p-3)
-            >
-              {index + 1}
-            </span>
+            <Tooltip key={emoji}>
+              <TooltipTrigger asChild>
+                <motion.button
+                  onClick={() => handleReact(emoji)}
+                  disabled={!isEnabled}
+                  whileTap={isEnabled ? { scale: 0.85 } : undefined}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: pressedState?.emoji === emoji ? 1.12 : 1,
+                  }}
+                  transition={{
+                    delay: index * 0.05,
+                    scale: { duration: 0.1 },
+                  }}
+                  className={cn(
+                    "relative text-2xl sm:text-3xl p-2 sm:p-3 rounded-full",
+                    "transition-colors duration-100",
+                    "focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-amber-950",
+                    isEnabled
+                      ? "hover:bg-amber-800/50 cursor-pointer"
+                      : "opacity-50 cursor-not-allowed"
+                  )}
+                  style={{
+                    textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  }}
+                  aria-label={t("reactWith", { emoji })}
+                  aria-disabled={!isEnabled}
+                >
+                  {emoji}
+
+                  {/* Ripple ring on press */}
+                  <AnimatePresence>
+                    {pressedState?.emoji === emoji && (
+                      <motion.div
+                        key={`ring-${pressedState.key}`}
+                        initial={{ scale: 1, opacity: 0.6 }}
+                        animate={{ scale: 1.4, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="absolute inset-0 rounded-full border-2 border-amber-400 pointer-events-none"
+                      />
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </TooltipTrigger>
+
+              {/* Keyboard shortcut tooltip - only shows on hover (desktop) */}
+              <TooltipContent
+                side="top"
+                className="hidden sm:flex items-center gap-1.5"
+              >
+                <Keyboard className="h-3 w-3 text-amber-300" />
+                <span className="font-mono">{index + 1}</span>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </div>
-      </div>
-    </footer>
+      </footer>
+    </TooltipProvider>
   );
 }
 
