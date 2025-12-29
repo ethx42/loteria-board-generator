@@ -112,7 +112,23 @@
     "spectatorCount": "{count, plural, =0 {No spectators} =1 {1 spectator} other {# spectators}}",
     "react": "React!",
     "cooldown": "Wait a moment...",
-    "reactWith": "React with {emoji}"
+    "reactWith": "React with {emoji}",
+    "waitingForHost": "Waiting for the host to start",
+    "hostSettingUp": "The Game Master is setting up the game",
+    "spectatorsWaiting": "{count, plural, =1 {1 spectator waiting} other {# spectators waiting}}",
+    "personalView": "Personal view",
+    "errors": {
+      "roomNotFound": "Game not found",
+      "roomNotFoundDesc": "The room may have been closed or the code is incorrect.",
+      "gameEnded": "The game has ended",
+      "gameEndedDesc": "Thanks for watching!",
+      "alreadyConnected": "Already connected",
+      "alreadyConnectedDesc": "You're already watching from another tab.",
+      "connectionFailed": "Connection failed",
+      "connectionFailedDesc": "Please check your connection and try again.",
+      "tryAgain": "Try Again",
+      "goBack": "Go Back"
+    }
   },
   "boards": {
     "status": "Board Status",
@@ -125,7 +141,10 @@
     "title": "Remote Controller",
     "connectedTo": "Connected to room {roomId}",
     "tapToDraw": "Tap to draw a card",
-    "gameFinished": "Game finished!"
+    "gameFinished": "Game finished!",
+    "hostDisconnected": "The host has ended the session. Thanks for playing!",
+    "roomNotFound": "This room doesn't exist or the host has left.",
+    "alreadyConnected": "Another controller is already connected to this room."
   },
   "generator": {
     "title": "Board Generator",

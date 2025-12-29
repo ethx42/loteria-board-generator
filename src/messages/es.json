@@ -112,7 +112,23 @@
     "spectatorCount": "{count, plural, =0 {Sin espectadores} =1 {1 espectador} other {# espectadores}}",
     "react": "¡Reacciona!",
     "cooldown": "Espera un momento...",
-    "reactWith": "Reaccionar con {emoji}"
+    "reactWith": "Reaccionar con {emoji}",
+    "waitingForHost": "Esperando a que el anfitrión inicie",
+    "hostSettingUp": "El Game Master está preparando el juego",
+    "spectatorsWaiting": "{count, plural, =1 {1 espectador esperando} other {# espectadores esperando}}",
+    "personalView": "Vista personal",
+    "errors": {
+      "roomNotFound": "Sala no encontrada",
+      "roomNotFoundDesc": "La sala pudo haber sido cerrada o el código es incorrecto.",
+      "gameEnded": "El juego ha terminado",
+      "gameEndedDesc": "¡Gracias por ver!",
+      "alreadyConnected": "Ya estás conectado",
+      "alreadyConnectedDesc": "Ya estás viendo desde otra pestaña.",
+      "connectionFailed": "Error de conexión",
+      "connectionFailedDesc": "Por favor verifica tu conexión e intenta de nuevo.",
+      "tryAgain": "Intentar de nuevo",
+      "goBack": "Volver"
+    }
   },
   "boards": {
     "status": "Estado de Tableros",
@@ -125,7 +141,10 @@
     "title": "Control Remoto",
     "connectedTo": "Conectado a la sala {roomId}",
     "tapToDraw": "Toca para sacar una carta",
-    "gameFinished": "¡Juego terminado!"
+    "gameFinished": "¡Juego terminado!",
+    "hostDisconnected": "El anfitrión ha terminado la sesión. ¡Gracias por jugar!",
+    "roomNotFound": "Esta sala no existe o el anfitrión se fue.",
+    "alreadyConnected": "Otro control ya está conectado a esta sala."
   },
   "generator": {
     "title": "Generador de Tableros",
