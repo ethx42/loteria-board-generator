@@ -103,9 +103,22 @@
   },
   "history": {
     "title": "Historial de Cartas",
-    "cardsPlayed": "{count} cartas jugadas",
-    "clickToExpand": "Toca para expandir",
-    "empty": "Aún no se han sacado cartas"
+    "cardsPlayed": "{count, plural, =1 {1 carta jugada} other {# cartas jugadas}}",
+    "newestFirst": "Más reciente primero",
+    "latestCard": "Última Carta",
+    "previousCards": "Cartas Anteriores",
+    "tapForDetails": "Toca para ver detalles",
+    "tapToCollapse": "Toca para cerrar",
+    "hasMoreInfo": "Tiene información adicional",
+    "recency": {
+      "justCalled": "Recién sacada",
+      "previous": "Anterior",
+      "cardsAgo": "Hace {count} cartas"
+    },
+    "empty": {
+      "title": "Sin cartas aún",
+      "description": "Saca tu primera carta para comenzar"
+    }
   },
   "host": {
     "controllerConnected": "¡Control conectado!",

@@ -103,9 +103,22 @@
   },
   "history": {
     "title": "Card History",
-    "cardsPlayed": "{count} cards played",
-    "clickToExpand": "Tap to expand",
-    "empty": "No cards drawn yet"
+    "cardsPlayed": "{count, plural, =1 {1 card played} other {# cards played}}",
+    "newestFirst": "Newest first",
+    "latestCard": "Latest Card",
+    "previousCards": "Previous Cards",
+    "tapForDetails": "Tap for details",
+    "tapToCollapse": "Tap to close",
+    "hasMoreInfo": "Has additional information",
+    "recency": {
+      "justCalled": "Just called",
+      "previous": "Previous",
+      "cardsAgo": "{count} cards ago"
+    },
+    "empty": {
+      "title": "No cards yet",
+      "description": "Draw your first card to start"
+    }
   },
   "host": {
     "controllerConnected": "Controller connected!",
