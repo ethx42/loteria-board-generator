@@ -580,6 +580,25 @@ export default class GameRoom implements Server {
       const controller = this.room.getConnection(this.state.controllerId);
       send(controller, { type: "HOST_DISCONNECTED" });
     }
+
+    // Notify all spectators and close their connections
+    const spectatorCount = this.state.spectatorIds.size;
+    for (const spectatorId of this.state.spectatorIds) {
+      const spectator = this.room.getConnection(spectatorId);
+      if (spectator) {
+        send(spectator, { type: "HOST_DISCONNECTED" });
+        // Close connection with custom code so client knows not to reconnect
+        spectator.close(4001, "Host disconnected");
+      }
+    }
+
+    // Clear spectator list
+    this.state.spectatorIds.clear();
+
+    log.info(
+      this.room.id,
+      `Notified ${spectatorCount} spectators of host disconnect`
+    );
   }
 
   private handleControllerDisconnect(): void {
