@@ -28,7 +28,7 @@ import type { GameStatus, ItemDefinition } from "@/lib/types/game";
 import type { SoundSourceType } from "@/lib/audio";
 import { ConnectionStatusIndicator, type ConnectionStatus } from "./connection-status";
 import { DrawButton } from "./draw-button";
-import { MiniCard } from "./mini-card";
+import { ControllerCurrentCard } from "./controller-current-card";
 import { HistoryModal } from "./history-modal";
 import { SoundSyncModal } from "@/components/sound-sync-modal";
 import { SoundControlMenu } from "@/components/sound-control-menu";
@@ -46,6 +46,8 @@ export interface ControllerGameState {
   totalItems: number;
   status: GameStatus;
   historyCount: number;
+  /** Full history of played cards (v4.0: for history modal) */
+  history: readonly ItemDefinition[];
 }
 
 /**
@@ -237,28 +239,14 @@ export function RemoteController({
         />
       </header>
 
-      {/* ====== MIDDLE ZONE: Mini Card Preview ====== */}
-      <section className="flex flex-1 flex-col items-center justify-center px-4 py-4">
-        <MiniCard
+      {/* ====== MIDDLE ZONE: Current Card Display ====== */}
+      <section className="flex flex-1 flex-col items-center justify-center px-4 py-2 overflow-y-auto">
+        <ControllerCurrentCard
           item={gameState.currentItem}
+          cardNumber={currentCard}
+          totalCards={totalCards}
           reducedMotion={reducedMotion}
         />
-
-        {/* Short text preview (if available) */}
-        <AnimatePresence mode="wait">
-          {gameState.currentItem?.shortText && (
-            <motion.p
-              key={gameState.currentItem.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mt-4 max-w-[280px] text-center font-serif text-sm leading-relaxed text-amber-200/80"
-            >
-              {gameState.currentItem.shortText.slice(0, 100)}
-              {gameState.currentItem.shortText.length > 100 ? "..." : ""}
-            </motion.p>
-          )}
-        </AnimatePresence>
       </section>
 
       {/* ====== MAIN ZONE: Giant Draw Button (Thumb Zone) ====== */}
@@ -347,11 +335,11 @@ export function RemoteController({
         </div>
       </footer>
 
-      {/* History Modal - Note: Controller doesn't have full history, just count */}
+      {/* History Modal */}
       <HistoryModal
         isOpen={isHistoryOpen}
         onClose={handleCloseHistory}
-        history={[]}
+        history={gameState.history}
         currentItem={gameState.currentItem}
         reducedMotion={reducedMotion}
       />
