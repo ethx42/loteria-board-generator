@@ -56,6 +56,9 @@ interface ControlsBarProps {
   /** Callback to draw next card */
   onDrawCard: () => void;
 
+  /** Whether draw is currently debounced (1 second cooldown) */
+  isDrawDebounced?: boolean;
+
   /** Callback to pause game */
   onPause: () => void;
 
@@ -178,6 +181,7 @@ export function ControlsBar({
   currentCard,
   totalCards,
   onDrawCard,
+  isDrawDebounced = false,
   onPause,
   onResume,
   onToggleFullscreen,
@@ -200,11 +204,14 @@ export function ControlsBar({
   const isPaused = gameStatus === "paused";
   const isPlaying = gameStatus === "playing";
 
+  // Draw button is disabled if can't draw, game finished, or debounce active
+  const isDrawDisabled = !canDraw || isFinished || isDrawDebounced;
+
   const handleDrawCard = useCallback(() => {
-    if (canDraw) {
+    if (canDraw && !isDrawDebounced) {
       onDrawCard();
     }
-  }, [canDraw, onDrawCard]);
+  }, [canDraw, isDrawDebounced, onDrawCard]);
 
   return (
     <>
@@ -276,14 +283,28 @@ export function ControlsBar({
               ) : null}
 
               {/* Draw Card Button (Primary) */}
-              <ControlButton
-                icon={<SkipForward className="h-6 w-6" />}
-                label={currentCard === 0 ? "Draw First Card" : "Draw Next Card"}
-                onClick={handleDrawCard}
-                disabled={!canDraw || isFinished}
-                variant="primary"
-                size="large"
-              />
+              <div className="relative">
+                <ControlButton
+                  icon={<SkipForward className="h-6 w-6" />}
+                  label={
+                    isDrawDebounced
+                      ? "Please wait..."
+                      : currentCard === 0
+                        ? "Draw First Card"
+                        : "Draw Next Card"
+                  }
+                  onClick={handleDrawCard}
+                  disabled={isDrawDisabled}
+                  variant="primary"
+                  size="large"
+                />
+                {/* Cooldown indicator ring */}
+                {isDrawDebounced && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="h-16 w-16 animate-spin rounded-full border-2 border-amber-400/30 border-t-amber-400 md:h-[72px] md:w-[72px]" />
+                  </div>
+                )}
+              </div>
 
               {/* Fullscreen Toggle */}
               <ControlButton
@@ -346,10 +367,15 @@ export function ControlsBar({
               </div>
             </div>
 
-            {/* Keyboard hint */}
-            <div className="mt-4 text-center text-xs text-amber-400/40">
-              Press <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">C</kbd> to
-              toggle controls
+            {/* Keyboard hints */}
+            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-amber-400/40">
+              <span>
+                <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">Space</kbd> draw card
+              </span>
+              <span className="text-amber-700/30">|</span>
+              <span>
+                <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">C</kbd> toggle controls
+              </span>
             </div>
           </motion.div>
         )}

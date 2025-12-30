@@ -19,11 +19,19 @@
  * @see SRD §2.4 Host UI State Machine
  */
 
-import { useState, useCallback, useEffect, useSyncExternalStore, useRef } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useSyncExternalStore,
+  useRef,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { GameSession, ItemDefinition } from "@/lib/types/game";
+import type { BoardsManifest } from "@/lib/types/boards";
 import type { ReactionBurstMessage } from "@/lib/realtime/types";
 import { useHostUIState } from "@/lib/game/state-machine";
 import { createDevLogger } from "@/lib/utils/dev-logger";
@@ -34,7 +42,9 @@ import { ControlsBar } from "./controls-bar";
 import { HistoryModal } from "./history-modal";
 import { ReactionsOverlay } from "@/components/reactions-overlay";
 import { FullscreenPrompt } from "@/components/fullscreen-prompt";
+import { BoardStatusIndicator } from "@/components/board-status-indicator";
 import { useImagePreloader } from "@/lib/game/image-preloader";
+import { useBoardPredictions } from "@/lib/boards/use-board-predictions";
 
 const log = createDevLogger("HostDisplay");
 
@@ -81,6 +91,22 @@ interface HostDisplayProps {
 
   /** v4.0: Callback when card is flipped (for broadcasting to spectators) */
   onFlipChange?: (isFlipped: boolean) => void;
+
+  /** v4.0: Current detailed text expansion state (for sync) */
+  isDetailedExpanded?: boolean;
+
+  /** v4.0: Callback when detailed text is expanded (for broadcasting) */
+  onDetailedChange?: (isExpanded: boolean) => void;
+
+  /** v4.0: Whether detailed state was synced from controller */
+  isDetailedSyncedFromController?: boolean;
+
+  /**
+   * v4.0: Optional boards manifest for board prediction tracking.
+   * When provided, shows BoardStatusIndicator with completion predictions.
+   * Only shown in standalone mode (hidden when controller connected).
+   */
+  boardsManifest?: BoardsManifest;
 }
 
 // ============================================================================
@@ -128,8 +154,13 @@ export function HostDisplay({
   reducedMotion: forcedReducedMotion,
   isFlipped = false,
   onFlipChange,
+  isDetailedExpanded = false,
+  onDetailedChange,
+  isDetailedSyncedFromController = false,
+  boardsManifest,
 }: HostDisplayProps) {
   const t = useTranslations("spectator");
+  const tDeepDive = useTranslations("deepDive");
   const {
     state: uiState,
     toggleFullscreen,
@@ -149,6 +180,21 @@ export function HostDisplay({
   const history = session.history;
   const currentItem = session.currentItem;
 
+  // v4.0: All called items for prediction = history + currentItem
+  // The history only contains PREVIOUS items, but we need to count the current one too
+  const allCalledItems = useMemo(() => {
+    if (currentItem) {
+      return [...history, currentItem];
+    }
+    return history;
+  }, [history, currentItem]);
+
+  // v4.0: Board predictions (only when boardsManifest is provided)
+  const boardPredictions = useBoardPredictions(
+    boardsManifest?.boards,
+    allCalledItems
+  );
+
   // Prefetch upcoming images for faster loading (prefetch next 5 cards)
   // Uses shuffledDeck order to preload the ACTUAL next cards
   useImagePreloader(
@@ -158,9 +204,83 @@ export function HostDisplay({
     5 // preload 5 ahead
   );
 
+  // ============================================================================
+  // DEBOUNCED DRAW CARD (1 second cooldown to prevent double-tap)
+  // ============================================================================
+
+  const DRAW_DEBOUNCE_MS = 1000;
+  const [isDrawDebounced, setIsDrawDebounced] = useState(false);
+  const drawDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const handleDrawCardDebounced = useCallback(() => {
+    if (isDrawDebounced) {
+      log.debug("Draw card debounced - ignoring");
+      return;
+    }
+
+    // Check if game allows drawing
+    const isFinished = session.status === "finished";
+    const canDraw =
+      !isFinished &&
+      (session.status === "ready" ||
+        session.status === "playing" ||
+        (session.status === "paused" && currentCard < totalCards));
+
+    if (!canDraw) {
+      return;
+    }
+
+    // Execute draw
+    onDrawCard();
+
+    // Start debounce cooldown
+    setIsDrawDebounced(true);
+    drawDebounceTimeoutRef.current = setTimeout(() => {
+      setIsDrawDebounced(false);
+    }, DRAW_DEBOUNCE_MS);
+  }, [isDrawDebounced, session.status, currentCard, totalCards, onDrawCard]);
+
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (drawDebounceTimeoutRef.current) {
+        clearTimeout(drawDebounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // ============================================================================
+  // KEYBOARD SHORTCUTS (Spacebar for draw, C for controls toggle)
+  // ============================================================================
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Spacebar: Draw next card
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault(); // Prevent page scroll
+        handleDrawCardDebounced();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleDrawCardDebounced]);
+
   // Modal state
   const [isHistoryModalOpen, setHistoryModalOpen] = useState(false);
-  
+
   // Fullscreen prompt state
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isActuallyFullscreen, setIsActuallyFullscreen] = useState(false);
@@ -173,22 +293,23 @@ export function HostDisplay({
     const checkFullscreen = () => {
       setIsActuallyFullscreen(!!document.fullscreenElement);
     };
-    
+
     checkFullscreen();
     document.addEventListener("fullscreenchange", checkFullscreen);
-    return () => document.removeEventListener("fullscreenchange", checkFullscreen);
+    return () =>
+      document.removeEventListener("fullscreenchange", checkFullscreen);
   }, []);
 
   // Detect controller connection changes and show fullscreen prompt
   useEffect(() => {
     const wasConnected = prevControllerConnectedRef.current;
     const isNowConnected = isControllerConnected;
-    
+
     // Show prompt on connection change OR on first mount if already connected
-    const shouldShowPrompt = 
-      (!wasConnected && isNowConnected) || 
+    const shouldShowPrompt =
+      (!wasConnected && isNowConnected) ||
       (isNowConnected && !hasShownInitialPromptRef.current);
-    
+
     if (shouldShowPrompt) {
       // Controller just connected (or was already connected on mount)
       log.log("Controller connected, showing fullscreen prompt");
@@ -201,7 +322,7 @@ export function HostDisplay({
       onControllerDisconnected();
       setShowFullscreenPrompt(false);
     }
-    
+
     prevControllerConnectedRef.current = isNowConnected;
   }, [isControllerConnected, onControllerConnected, onControllerDisconnected]);
 
@@ -234,10 +355,7 @@ export function HostDisplay({
   useEffect(() => {
     if (session.deck.theme) {
       const root = document.documentElement;
-      root.style.setProperty(
-        "--accent-color",
-        session.deck.theme.primaryColor
-      );
+      root.style.setProperty("--accent-color", session.deck.theme.primaryColor);
       if (session.deck.theme.secondaryColor) {
         root.style.setProperty(
           "--accent-secondary",
@@ -245,10 +363,7 @@ export function HostDisplay({
         );
       }
       if (session.deck.theme.fontFamily) {
-        root.style.setProperty(
-          "--font-display",
-          session.deck.theme.fontFamily
-        );
+        root.style.setProperty("--font-display", session.deck.theme.fontFamily);
       }
     }
   }, [session.deck.theme]);
@@ -280,20 +395,40 @@ export function HostDisplay({
         backgroundPosition: "center",
       }}
     >
-      {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
+      {/* Background overlay with vignette effect */}
+      <div
+        className="absolute inset-0"
+        aria-hidden="true"
+        style={{
+          background: `
+            radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.5) 100%),
+            linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%)
+          `,
+        }}
+      />
+
+      {/* Theme color ambient glow (subtle) */}
+      {currentItem?.themeColor && (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-10"
+          style={{
+            background: `radial-gradient(ellipse at 30% 50%, ${currentItem.themeColor}40 0%, transparent 50%)`,
+          }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Main content area */}
       <div className="relative flex h-screen w-full">
         {/* Left: Main card area */}
         <div
           className={`
-            flex flex-1 flex-col items-center justify-center p-4
-            ${isWideScreen ? "pr-80" : "pb-32"}
+            flex flex-1 flex-col items-center justify-center p-4 md:p-6
+            ${isWideScreen ? "pr-36" : "pb-36"}
           `}
         >
           {/* Card + Text Layout */}
-          <div className="flex w-full max-w-5xl flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-12">
+          <div className="flex w-full max-w-5xl flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
             {/* Current Card with flip (host controls flip, broadcasts to spectators) */}
             <CurrentCard
               item={currentItem}
@@ -304,17 +439,24 @@ export function HostDisplay({
               hostFlipState={isFlipped}
               onFlipChange={onFlipChange}
               showTitle={false}
+              size={isWideScreen ? "large" : "default"}
             />
 
             {/* Text Panel (side on desktop) */}
             <TextPanel
               item={currentItem}
-              currentNumber={currentCard}
-              totalCards={totalCards}
-              showCounter={isWideScreen}
               showCategory={true}
               reducedMotion={reducedMotion}
-              className="w-full max-w-md lg:mt-8"
+              className="w-full max-w-md lg:max-w-lg lg:mt-4"
+              isDetailedExpanded={isDetailedExpanded}
+              onDetailedChange={onDetailedChange}
+              isDetailedSyncedFromController={isDetailedSyncedFromController}
+              detailedTexts={{
+                expand: tDeepDive("expand"),
+                collapse: tDeepDive("collapse"),
+                syncedFromController: tDeepDive("syncedFromController"),
+                localOverride: tDeepDive("localOverride"),
+              }}
             />
           </div>
         </div>
@@ -322,7 +464,7 @@ export function HostDisplay({
         {/* History Strip - Adaptive Layout */}
         {isWideScreen ? (
           /* Vertical layout on wide screens (FR-035a) */
-          <aside className="absolute right-0 top-0 h-full w-32 border-l border-amber-700/20 bg-amber-950/50 backdrop-blur-sm">
+          <aside className="absolute right-0 top-0 h-full w-36 border-l border-amber-700/30 bg-gradient-to-l from-amber-950/70 to-amber-950/50 backdrop-blur-md">
             <HistoryStrip
               history={history}
               currentItem={currentItem}
@@ -338,9 +480,17 @@ export function HostDisplay({
           </aside>
         ) : (
           /* Horizontal layout on standard screens (FR-035b) */
-          <aside className="absolute bottom-28 left-0 right-0 border-t border-amber-700/20 bg-amber-950/50 py-2 backdrop-blur-sm">
-            {/* Constrain width to match content area (~768px) */}
-            <div className="mx-auto w-full max-w-3xl px-4">
+          /* Dynamic bottom position: lower when controls hidden, higher when visible */
+          <aside
+            className={`
+              absolute left-0 right-0 border-t border-amber-700/30 
+              bg-gradient-to-t from-amber-950/80 to-amber-950/60 py-3 backdrop-blur-md
+              transition-all duration-300 ease-out
+              ${uiState.controlsVisible ? "bottom-28" : "bottom-4"}
+            `}
+          >
+            {/* Constrain width to match content area */}
+            <div className="mx-auto w-full max-w-4xl px-4">
               <HistoryStrip
                 history={history}
                 currentItem={currentItem}
@@ -429,7 +579,8 @@ export function HostDisplay({
         isControllerConnected={isControllerConnected}
         currentCard={currentCard}
         totalCards={totalCards}
-        onDrawCard={onDrawCard}
+        onDrawCard={handleDrawCardDebounced}
+        isDrawDebounced={isDrawDebounced}
         onPause={onPause}
         onResume={onResume}
         onToggleFullscreen={toggleFullscreen}
@@ -473,6 +624,13 @@ export function HostDisplay({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* v4.0: Board status indicator (only in standalone mode with boards) */}
+      <BoardStatusIndicator
+        predictions={boardPredictions}
+        isVisible={!isControllerConnected && boardsManifest !== undefined}
+        position="top-left"
+      />
 
       {/* v4.0: Reactions overlay */}
       <ReactionsOverlay reactions={reactions} />

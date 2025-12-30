@@ -37,7 +37,9 @@ import type {
   GameStatus,
   ItemDefinition,
 } from "@/lib/types/game";
+import type { BoardsManifest } from "@/lib/types/boards";
 import type { PendingSoundSync } from "@/lib/audio/use-sound-sync";
+import { loadBoardsForDeck } from "@/lib/game/deck-loader";
 
 // Dev-only logger
 const log = createDevLogger("HostPage");
@@ -189,6 +191,17 @@ function HostPageContent() {
   // v4.0: Track card flip state (for spectator sync)
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // v4.0: Track detailed text expansion state (for spectator sync)
+  const [isDetailedExpanded, setIsDetailedExpanded] = useState(false);
+  // v4.0: Track if detailed state came from controller
+  const [isDetailedSyncedFromController, setIsDetailedSyncedFromController] =
+    useState(false);
+
+  // v4.0: Board Prediction Engine - boards manifest for the selected deck
+  const [boardsManifest, setBoardsManifest] = useState<BoardsManifest | null>(
+    null
+  );
+
   const clearPendingSoundSync = useCallback(() => {
     setPendingSoundSync(null);
   }, []);
@@ -254,8 +267,10 @@ function HostPageContent() {
   // ===========================================================================
 
   const doDrawCard = useCallback(() => {
-    // Reset flip state when drawing a new card
+    // Reset flip state and detailed state when drawing a new card
     setIsFlipped(false);
+    setIsDetailedExpanded(false);
+    setIsDetailedSyncedFromController(false);
 
     setState((prev) => {
       if (prev.status !== "pairing" && prev.status !== "playing") return prev;
@@ -354,6 +369,17 @@ function HostPageContent() {
     [broadcastState]
   );
 
+  // Handle detailed text expansion change (for spectator sync)
+  const handleDetailedChange = useCallback(
+    (newState: boolean) => {
+      setIsDetailedExpanded(newState);
+      setIsDetailedSyncedFromController(false); // Host is toggling locally
+      // Broadcast to spectators via socket
+      socket.toggleDetailed(newState);
+    },
+    [socket]
+  );
+
   // Store action refs for message handler
   const actionsRef = useRef({ doDrawCard, doPause, doResume, doReset });
   useEffect(() => {
@@ -383,7 +409,20 @@ function HostPageContent() {
           case "RESET_GAME":
             actionsRef.current.doReset();
             break;
+          case "FLIP_CARD":
+            // Controller is flipping the card - update host state and broadcast
+            handleFlipChange(message.isFlipped);
+            break;
         }
+      }
+
+      // v4.0: Toggle detailed text from Controller
+      if (message.type === "TOGGLE_DETAILED") {
+        log.log(
+          `Received detailed toggle from controller: isExpanded=${message.isExpanded}`
+        );
+        setIsDetailedExpanded(message.isExpanded);
+        setIsDetailedSyncedFromController(true);
       }
 
       // Sound preference from Controller (scope: host_only or both)
@@ -482,7 +521,7 @@ function HostPageContent() {
 
   // Handle deck selection
   const handleDeckSelect = useCallback(
-    (deck: DeckDefinition) => {
+    async (deck: DeckDefinition, manifestUrl?: string) => {
       try {
         log.info(`Initializing session with deck: ${deck.id}`, {
           roomId,
@@ -493,6 +532,24 @@ function HostPageContent() {
         setState({ status: "pairing", session });
         // Use ref to avoid socket in dependencies (prevents reconnection loop)
         connectRef.current();
+
+        // v4.0: Load boards for Board Prediction Engine (non-blocking)
+        if (manifestUrl) {
+          loadBoardsForDeck(manifestUrl)
+            .then((boards) => {
+              if (boards) {
+                log.info(
+                  `Loaded ${boards.totalBoards} boards for prediction engine`
+                );
+                setBoardsManifest(boards);
+              } else {
+                log.debug("No boards.json found for this deck");
+              }
+            })
+            .catch((error) => {
+              log.warn("Failed to load boards (non-critical):", error);
+            });
+        }
       } catch (error) {
         log.error("Failed to initialize session", error);
         setState({
@@ -695,6 +752,10 @@ function HostPageContent() {
       reactions={reactions}
       isFlipped={isFlipped}
       onFlipChange={handleFlipChange}
+      isDetailedExpanded={isDetailedExpanded}
+      onDetailedChange={handleDetailedChange}
+      isDetailedSyncedFromController={isDetailedSyncedFromController}
+      boardsManifest={boardsManifest ?? undefined}
     />
   );
 }
