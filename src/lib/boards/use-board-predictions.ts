@@ -70,7 +70,7 @@ export function useBoardPredictions(
       return null;
     }
 
-    // Return null if no history yet
+    // Return initial state if no history yet
     if (history.length === 0) {
       return {
         totalBoards: boards.length,

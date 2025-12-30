@@ -97,16 +97,14 @@ export function hostUIReducer(
     // ========================================
 
     case "TOGGLE_CONTROLS":
-      // ESC key toggles in paired mode (FR-023)
-      if (state.mode === "paired") {
-        return {
-          ...state,
-          controlsVisible: !state.controlsVisible,
-          controlsTemporary: false, // Toggle makes it permanent
-        };
-      }
-      // In standalone, controls are always visible
-      return state;
+      // Toggle controls visibility in any mode (FR-023)
+      // In paired mode: ESC/C toggles controls
+      // In standalone mode: C toggles controls (user preference)
+      return {
+        ...state,
+        controlsVisible: !state.controlsVisible,
+        controlsTemporary: false, // Toggle makes it permanent
+      };
 
     case "SHOW_CONTROLS":
       return {

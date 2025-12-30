@@ -33,6 +33,251 @@ export function binomial(n: number, k: number): number {
 }
 
 /**
+ * Calculate expected pairwise overlap between boards
+ * 
+ * Formula: E[overlap] ≈ S² / N
+ * Where S = slots per board, N = total items
+ * 
+ * This is based on hypergeometric distribution:
+ * When selecting S items from N twice, expected intersection ≈ S²/N
+ */
+export function calculateExpectedOverlap(boardSize: number, numItems: number): number {
+  if (numItems <= 0) return boardSize;
+  return (boardSize * boardSize) / numItems;
+}
+
+/**
+ * Calculate minimum items needed for a target max overlap percentage
+ * 
+ * For a board of size S with max overlap of X% (e.g., 0.5 for 50%):
+ * N ≥ S / X
+ * 
+ * @param boardSize - Number of slots per board
+ * @param targetOverlapPercent - Target max overlap as decimal (0.5 = 50%)
+ * @returns Minimum number of items needed
+ */
+export function calculateMinItemsForOverlap(
+  boardSize: number,
+  targetOverlapPercent: number
+): number {
+  if (targetOverlapPercent <= 0) return boardSize * 10; // Unrealistic
+  return Math.ceil(boardSize / targetOverlapPercent);
+}
+
+/**
+ * Quality tiers for board diversity
+ */
+export type DiversityTier = "excellent" | "good" | "fair" | "poor";
+
+export interface DiversityAnalysis {
+  tier: DiversityTier;
+  expectedOverlap: number;
+  expectedOverlapPercent: number;
+  minItemsForGood: number;
+  minItemsForExcellent: number;
+  recommendation: string | null;
+}
+
+/**
+ * Analyze diversity quality for a configuration
+ * 
+ * Tiers based on expected overlap percentage:
+ * - Excellent: < 30% overlap
+ * - Good: 30-50% overlap  
+ * - Fair: 50-70% overlap
+ * - Poor: > 70% overlap
+ */
+export function analyzeDiversity(
+  boardSize: number,
+  numItems: number
+): DiversityAnalysis {
+  const expectedOverlap = calculateExpectedOverlap(boardSize, numItems);
+  const expectedOverlapPercent = expectedOverlap / boardSize;
+  
+  // Calculate items needed for better tiers
+  const minItemsForGood = calculateMinItemsForOverlap(boardSize, 0.5); // 50%
+  const minItemsForExcellent = calculateMinItemsForOverlap(boardSize, 0.3); // 30%
+  
+  let tier: DiversityTier;
+  let recommendation: string | null = null;
+  
+  if (expectedOverlapPercent < 0.30) {
+    tier = "excellent";
+  } else if (expectedOverlapPercent < 0.50) {
+    tier = "good";
+  } else if (expectedOverlapPercent < 0.70) {
+    tier = "fair";
+    const itemsToAdd = minItemsForGood - numItems;
+    if (itemsToAdd > 0) {
+      recommendation = `Add ${itemsToAdd} more items (${minItemsForGood} total) for better diversity`;
+    }
+  } else {
+    tier = "poor";
+    const itemsToAdd = minItemsForGood - numItems;
+    if (itemsToAdd > 0) {
+      recommendation = `Add at least ${itemsToAdd} more items (${minItemsForGood} total) for acceptable diversity`;
+    }
+  }
+  
+  return {
+    tier,
+    expectedOverlap,
+    expectedOverlapPercent,
+    minItemsForGood,
+    minItemsForExcellent,
+    recommendation,
+  };
+}
+
+// ============================================================================
+// GAME EXPERIENCE CALCULATIONS
+// ============================================================================
+
+/**
+ * Experience tier based on what fraction of players mark each item
+ */
+export type ExperienceTier = "chaotic" | "competitive" | "balanced" | "diverse";
+
+/**
+ * Game experience analysis based on players, grid, and items
+ * 
+ * The key insight: when an item is called, what fraction of players mark it?
+ * This is the most intuitive measure of game quality.
+ * 
+ * Formula: markingFraction = S / N (simplified from frequency/B)
+ * Where S = slots per board, N = total items
+ */
+export interface GameExperienceAnalysis {
+  /** Number of players/boards */
+  players: number;
+  /** Slots per board */
+  slots: number;
+  /** Total items in the pool */
+  items: number;
+  /** How many times each item appears across all boards */
+  itemFrequency: number;
+  /** What fraction of players mark when an item is called (0-1) */
+  markingFraction: number;
+  /** Approximate number of players who mark each item */
+  playersWhoMark: number;
+  /** Experience quality tier */
+  tier: ExperienceTier;
+  /** Human-readable description */
+  description: string;
+}
+
+/**
+ * Analyze game experience based on the three key variables
+ */
+export function analyzeGameExperience(
+  players: number,
+  slots: number,
+  items: number
+): GameExperienceAnalysis {
+  // Frequency = how many boards each item appears in
+  const itemFrequency = items > 0 ? (players * slots) / items : players;
+  
+  // Marking fraction = what % of players mark when an item is called
+  const markingFraction = items > 0 ? slots / items : 1;
+  
+  // Approximate players who mark
+  const playersWhoMark = Math.round(markingFraction * players * 10) / 10;
+  
+  // Determine tier based on marking fraction
+  let tier: ExperienceTier;
+  let description: string;
+  
+  if (markingFraction >= 0.5) {
+    tier = "chaotic";
+    description = "Too many players mark each item - games end too quickly";
+  } else if (markingFraction >= 0.33) {
+    tier = "competitive";
+    description = "High competition - multiple players race for each item";
+  } else if (markingFraction >= 0.2) {
+    tier = "balanced";
+    description = "Ideal balance - enough competition with variety";
+  } else {
+    tier = "diverse";
+    description = "Maximum variety - items feel unique to each player";
+  }
+  
+  return {
+    players,
+    slots,
+    items,
+    itemFrequency,
+    markingFraction,
+    playersWhoMark,
+    tier,
+    description,
+  };
+}
+
+/**
+ * Recommendations for item counts based on players and grid
+ */
+export interface ItemRecommendations {
+  /** Minimum items to fill one board */
+  minimum: number;
+  /** Items for competitive experience (~33% mark) */
+  competitive: number;
+  /** Items for balanced experience (~25% mark) - RECOMMENDED */
+  balanced: number;
+  /** Items for diverse experience (~20% mark) */
+  diverse: number;
+  /** Players who would mark at each tier */
+  playersAtTier: {
+    competitive: number;
+    balanced: number;
+    diverse: number;
+  };
+}
+
+/**
+ * Calculate item recommendations for a given player count and grid
+ */
+export function calculateItemRecommendations(
+  players: number,
+  slots: number
+): ItemRecommendations {
+  return {
+    minimum: slots,
+    competitive: Math.ceil(slots / 0.33),  // ~33% mark = 1/3 of players
+    balanced: Math.ceil(slots / 0.25),      // ~25% mark = 1/4 of players
+    diverse: Math.ceil(slots / 0.20),       // ~20% mark = 1/5 of players
+    playersAtTier: {
+      competitive: Math.round(players * 0.33),
+      balanced: Math.round(players * 0.25),
+      diverse: Math.round(players * 0.20),
+    },
+  };
+}
+
+/**
+ * Get the recommended item count for a target experience tier
+ */
+export function getRecommendedItems(
+  players: number,
+  slots: number,
+  targetTier: ExperienceTier = "balanced"
+): number {
+  const recs = calculateItemRecommendations(players, slots);
+  
+  switch (targetTier) {
+    case "chaotic":
+      return recs.minimum;
+    case "competitive":
+      return recs.competitive;
+    case "balanced":
+      return recs.balanced;
+    case "diverse":
+      return recs.diverse;
+    default:
+      return recs.balanced;
+  }
+}
+
+/**
  * Format large numbers with appropriate suffix
  */
 function formatNumber(n: number): string {
@@ -327,27 +572,29 @@ export function validateConstraints(
     details: { expected: c.B, actual: c.possibleUniqueBoards },
   });
 
-  // 7. OVERLAP_QUALITY: Check if boards will be too similar
-  // Minimum overlap = max(0, 2×S - N)
-  // If min overlap > 20% of board size, warn user
-  const minTheoreticalOverlap = Math.max(0, 2 * c.S - c.N);
-  const overlapRatio = minTheoreticalOverlap / c.S;
-  const poolUsageRatio = c.S / c.N; // What fraction of the pool each board uses
+  // 7. OVERLAP_QUALITY: Use diversity analysis for better recommendations
+  const diversity = analyzeDiversity(c.S, c.N);
   
-  // Boards are too similar if:
-  // - Min overlap > 20% of board size, OR
-  // - Each board uses > 50% of the pool
-  const overlapThreshold = 0.2;
-  const poolUsageThreshold = 0.5;
-  const overlapQualityGood = overlapRatio <= overlapThreshold && poolUsageRatio <= poolUsageThreshold;
+  // Consider "good" and "excellent" as valid
+  const overlapQualityGood = diversity.tier === "excellent" || diversity.tier === "good";
   
   let overlapMessage: string;
-  if (overlapQualityGood) {
-    overlapMessage = `Good diversity: boards use ${Math.round(poolUsageRatio * 100)}% of item pool`;
-  } else if (minTheoreticalOverlap > 0) {
-    overlapMessage = `⚠️ Low diversity: any two boards share at least ${minTheoreticalOverlap} items (${Math.round(overlapRatio * 100)}% overlap). Add more items or reduce board size.`;
-  } else {
-    overlapMessage = `⚠️ Low diversity: each board uses ${Math.round(poolUsageRatio * 100)}% of all items. Add more items for varied boards.`;
+  const overlapPercent = Math.round(diversity.expectedOverlapPercent * 100);
+  const expectedOverlapRounded = Math.round(diversity.expectedOverlap * 10) / 10;
+  
+  switch (diversity.tier) {
+    case "excellent":
+      overlapMessage = `🌟 Excellent diversity: ~${expectedOverlapRounded} items overlap expected (${overlapPercent}% of board)`;
+      break;
+    case "good":
+      overlapMessage = `✅ Good diversity: ~${expectedOverlapRounded} items overlap expected (${overlapPercent}% of board)`;
+      break;
+    case "fair":
+      overlapMessage = `⚠️ Fair diversity: ~${expectedOverlapRounded} items overlap expected (${overlapPercent}% of board). ${diversity.recommendation || ""}`;
+      break;
+    case "poor":
+      overlapMessage = `❌ Poor diversity: ~${expectedOverlapRounded} items overlap expected (${overlapPercent}% of board). ${diversity.recommendation || "Boards will be very similar."}`;
+      break;
   }
   
   validations.push({
@@ -356,8 +603,11 @@ export function validateConstraints(
     message: overlapMessage,
     severity: overlapQualityGood ? "info" : "warning",
     details: { 
-      expected: Math.round(overlapThreshold * c.S), 
-      actual: minTheoreticalOverlap 
+      expected: diversity.minItemsForGood,
+      actual: c.N,
+      tier: diversity.tier,
+      expectedOverlap: diversity.expectedOverlap,
+      expectedOverlapPercent: diversity.expectedOverlapPercent,
     },
   });
 
