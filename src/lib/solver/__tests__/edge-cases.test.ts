@@ -204,7 +204,7 @@ describe("Impossible Configurations", () => {
 
   it("should warn when pool usage is too high (low diversity)", () => {
     // User's problematic config: 16 items, 9 slots (3x3), 100 boards
-    // poolUsageRatio = 9/16 = 56.25% > 50% threshold
+    // Expected overlap: 9²/16 = 5.1 items (~56% of board) → Fair tier
     const config = createConfig(16, 100, 3, 3);
 
     const validations = validateConstraints(config);
@@ -215,12 +215,14 @@ describe("Impossible Configurations", () => {
     expect(overlapQuality).toBeDefined();
     expect(overlapQuality?.isValid).toBe(false);
     expect(overlapQuality?.severity).toBe("warning");
-    expect(overlapQuality?.message).toContain("Low diversity");
+    // New format: "Fair diversity" or "Poor diversity" with recommendation
+    expect(overlapQuality?.message).toMatch(/Fair diversity|Poor diversity/);
+    expect(overlapQuality?.message).toContain("overlap");
   });
 
   it("should pass overlap quality when pool usage is reasonable", () => {
     // Good config: 36 items, 9 slots (3x3), 15 boards
-    // poolUsageRatio = 9/36 = 25% < 50% threshold
+    // Expected overlap: 9²/36 = 2.25 items (~25% of board) → Excellent tier
     const config = createConfig(36, 15, 3, 3);
 
     const validations = validateConstraints(config);
@@ -230,7 +232,8 @@ describe("Impossible Configurations", () => {
 
     expect(overlapQuality).toBeDefined();
     expect(overlapQuality?.isValid).toBe(true);
-    expect(overlapQuality?.message).toContain("Good diversity");
+    // New format: "Good diversity" or "Excellent diversity"
+    expect(overlapQuality?.message).toMatch(/Good diversity|Excellent diversity/);
   });
 
   it("should handle edge case: exactly C(N,S) boards requested", async () => {

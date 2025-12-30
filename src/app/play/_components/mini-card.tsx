@@ -13,6 +13,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import type { ItemDefinition } from "@/lib/types/game";
+import { resolveImageUrl } from "@/lib/storage/image-url";
 
 // ============================================================================
 // TYPES
@@ -95,17 +96,19 @@ export function MiniCard({
           >
             {/* Card Image Container */}
             <div
-              className="relative overflow-hidden rounded-xl bg-amber-900/50 shadow-lg ring-1 ring-white/10"
+              className="relative overflow-hidden rounded-xl shadow-lg ring-1 ring-white/10"
               style={{
                 width: "120px",
-                aspectRatio: "2/3",
+                aspectRatio: "4/5",
               }}
             >
+              {/* Skeleton loader */}
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-amber-800/50 to-amber-900/50" />
               <Image
-                src={item.imageUrl}
+                src={resolveImageUrl(item.imageUrl)}
                 alt={item.name}
                 fill
-                className="object-cover"
+                className="object-cover transition-opacity duration-300"
                 sizes="120px"
               />
 
@@ -143,7 +146,7 @@ export function MiniCard({
               className="flex items-center justify-center rounded-xl border-2 border-dashed border-amber-700/40 bg-amber-900/20"
               style={{
                 width: "120px",
-                aspectRatio: "2/3",
+                aspectRatio: "4/5",
               }}
             >
               <div className="text-center text-amber-500/50">

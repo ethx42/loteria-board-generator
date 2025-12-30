@@ -1,0 +1,346 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "home": {
+    "tagline": "Optimally distributed boards",
+    "title": "Tabula",
+    "subtitle": "Create beautifully distributed game boards and play the traditional Mexican game with friends and family.",
+    "generator": {
+      "title": "Board Generator",
+      "description": "Create custom game boards with optimal distribution. Configure items, board size, and let our algorithm do the magic."
+    },
+    "play": {
+      "title": "Play Game",
+      "description": "Start a game session with your generated boards. Call cards, track progress, and declare winners."
+    },
+    "getStarted": "Get Started",
+    "comingSoon": "Coming Soon",
+    "features": {
+      "uniqueBoards": "Unique Boards",
+      "optimization": "Optimization",
+      "exportFormats": "Export Formats",
+      "openSource": "Open Source"
+    },
+    "footer": "Built with Next.js, TypeScript, and ❤️"
+  },
+  "game": {
+    "title": "Tabula",
+    "waitingForController": "Waiting for remote controller...",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting...",
+    "card": {
+      "current": "Current Card",
+      "draw": "Draw Card",
+      "drawFirst": "Draw First Card",
+      "noCard": "No card",
+      "counter": "{current} of {total}"
+    },
+    "status": {
+      "waiting": "Waiting",
+      "ready": "Ready",
+      "playing": "Playing",
+      "paused": "Paused",
+      "finished": "Finished"
+    },
+    "controls": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "reset": "Reset",
+      "history": "History",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "endSession": "End session",
+      "muteSound": "Mute sound",
+      "enableSound": "Enable sound",
+      "soundOn": "Sound on",
+      "soundOff": "Sound off"
+    },
+    "soundSync": {
+      "hostMutedTitle": "Host muted sound",
+      "hostMutedDescription": "The host has muted their sound. Would you like to mute sound on your controller too?",
+      "hostUnmutedTitle": "Host enabled sound",
+      "hostUnmutedDescription": "The host has enabled their sound. Would you like to enable sound on your controller too?",
+      "muteHere": "Mute here too",
+      "enableHere": "Enable here too",
+      "keepCurrent": "Keep my setting",
+      "dismiss": "Don't ask again this session"
+    }
+  },
+  "soundControl": {
+    "title": "Sound",
+    "menuLabel": "Sound options menu",
+    "thisDevice": "Controller",
+    "hostScreen": "Host screen",
+    "muteAll": "Mute all",
+    "unmuteAll": "Unmute all",
+    "close": "Close"
+  },
+  "pairing": {
+    "title": "Connect Remote Controller",
+    "scanQr": "Scan the QR code with your phone",
+    "orEnterCode": "Or enter the code",
+    "roomCode": "Room code",
+    "playStandalone": "Play without remote",
+    "spectatorLink": "Link for spectators",
+    "enterCode": "Enter the 4-letter code",
+    "join": "Join",
+    "invalidCode": "Invalid code. Use 4 letters.",
+    "connecting": "Connecting...",
+    "connected": "Connected!",
+    "connectionFailed": "Could not connect. Check the code.",
+    "hostDisconnected": "Host disconnected"
+  },
+  "deepDive": {
+    "expand": "Read more",
+    "collapse": "Show less",
+    "syncedFromController": "Expanded by controller",
+    "localOverride": "Personal view"
+  },
+  "textPanel": {
+    "drawPrompt": "Draw a card to see its story"
+  },
+  "history": {
+    "title": "Card History",
+    "cardsPlayed": "{count, plural, =1 {1 card played} other {# cards played}}",
+    "newestFirst": "Newest first",
+    "latestCard": "Latest Card",
+    "previousCards": "Previous Cards",
+    "tapForDetails": "Tap for details",
+    "tapToCollapse": "Tap to close",
+    "hasMoreInfo": "Has additional information",
+    "recency": {
+      "justCalled": "Just called",
+      "previous": "Previous",
+      "cardsAgo": "{count} cards ago"
+    },
+    "empty": {
+      "title": "No cards yet",
+      "description": "Draw your first card to start"
+    }
+  },
+  "host": {
+    "controllerConnected": "Controller connected!",
+    "clickForFullscreen": "Click here for fullscreen mode",
+    "dismissPrompt": "Dismiss"
+  },
+  "spectator": {
+    "watching": "Watching the game",
+    "spectatorCount": "{count, plural, =0 {No spectators} =1 {1 spectator} other {# spectators}}",
+    "react": "React!",
+    "cooldown": "Wait a moment...",
+    "reactWith": "React with {emoji}",
+    "waitingForHost": "Waiting for the host to start",
+    "hostSettingUp": "The Game Master is setting up the game",
+    "spectatorsWaiting": "{count, plural, =1 {1 spectator waiting} other {# spectators waiting}}",
+    "personalView": "Personal view",
+    "errors": {
+      "roomNotFound": "Game not found",
+      "roomNotFoundDesc": "The room may have been closed or the code is incorrect.",
+      "gameEnded": "The game has ended",
+      "gameEndedDesc": "Thanks for watching!",
+      "alreadyConnected": "Already connected",
+      "alreadyConnectedDesc": "You're already watching from another tab.",
+      "connectionFailed": "Connection failed",
+      "connectionFailedDesc": "Please check your connection and try again.",
+      "tryAgain": "Try Again",
+      "goBack": "Go Back"
+    }
+  },
+  "boards": {
+    "status": "Board Status",
+    "complete": "{count, plural, =1 {1 board complete} other {# boards complete}}",
+    "almostComplete": "{count, plural, =1 {1 board almost ready} other {# boards almost ready}}",
+    "leadingBoard": "Board #{number}: {percent}%",
+    "remaining": "{count} remaining",
+    "winner": "Winner!"
+  },
+  "controller": {
+    "title": "Remote Controller",
+    "connectedTo": "Connected to room {roomId}",
+    "tapToDraw": "Tap to draw a card",
+    "gameFinished": "Game finished!",
+    "hostDisconnected": "The host has ended the session. Thanks for playing!",
+    "roomNotFound": "This room doesn't exist or the host has left.",
+    "alreadyConnected": "Another controller is already connected to this room."
+  },
+  "generator": {
+    "title": "Board Generator",
+    "steps": {
+      "players": "Players",
+      "board": "Grid",
+      "items": "Items",
+      "distribution": "Review",
+      "preview": "Preview",
+      "export": "Export"
+    },
+    "next": "Next",
+    "previous": "Previous",
+    "generate": "Generate Boards",
+    "players": {
+      "title": "How many will play?",
+      "description": "Each player gets a unique board. Start by telling us your group size.",
+      "playersLabel": "Players",
+      "small": "Small group",
+      "medium": "Medium event",
+      "large": "Large event",
+      "custom": "Custom",
+      "hint": {
+        "title": "For {count} players:",
+        "description": "We'll calculate the ideal number of items for an engaging experience."
+      }
+    },
+    "board": {
+      "title": "Choose Board Size",
+      "description": "Select the grid size for your {players} players.",
+      "itemsPerBoard": "items each",
+      "customSize": "Use custom size",
+      "rows": "Rows",
+      "columns": "Cols",
+      "forPlayers": "For {count} players",
+      "recommendation": {
+        "intro": "With {slots} items per board, here's what you need:"
+      },
+      "recommended": "Recommended",
+      "items": "items",
+      "playersMarkEach": "mark each",
+      "moreItems": "More items",
+      "moreVariety": "More variety",
+      "advanced": "Advanced options",
+      "seed": {
+        "title": "Reproducibility Seed",
+        "optional": "optional",
+        "description": "Enter a seed to reproduce the exact same boards."
+      }
+    },
+    "preview": {
+      "success": "Generation complete!",
+      "boardsReady": "boards ready",
+      "regenerate": "Regenerate with new seed",
+      "noBoards": "No boards generated yet.",
+      "tryAgain": "Try again",
+      "board": "Board",
+      "close": "Close",
+      "showStats": "Show statistics",
+      "hideStats": "Hide statistics",
+      "stats": {
+        "time": "Generation time",
+        "maxOverlap": "Max overlap",
+        "avgOverlap": "Avg overlap",
+        "seed": "Seed (copy)"
+      }
+    },
+    "items": {
+      "title": "Add Your Items",
+      "description": "Add {target}+ items for a balanced experience with {players} players.",
+      "tier": {
+        "chaotic": "Chaotic",
+        "competitive": "Competitive",
+        "balanced": "Balanced",
+        "diverse": "Diverse"
+      },
+      "playersMarkEachItem": "players mark each item",
+      "items": "items",
+      "competitive": "Competitive",
+      "balanced": "Balanced",
+      "diverse": "Diverse",
+      "loadDefaults": "Load Example Items",
+      "placeholder": "Enter items here...\n\nExamples:\nEl Gallo\nLa Dama, El Sol, La Luna\n\"Item with, comma\"",
+      "itemsValid": "items valid",
+      "invalidInput": "Invalid input",
+      "duplicatesRemoved": "duplicates removed",
+      "needMore": "Need {count} more items",
+      "preview": "Preview ({count} items)",
+      "more": "more"
+    },
+    "review": {
+      "title": "Review Your Setup",
+      "description": "Everything looks great! Here's a summary before we generate.",
+      "ready": "Ready to Generate",
+      "notReady": "Configuration Needs Adjustments",
+      "summary": {
+        "title": "Game Summary",
+        "players": "{count, plural, =1 {player} other {players}}",
+        "boards": "{count, plural, =1 {1 unique board} other {# unique boards}}",
+        "grid": "board",
+        "slotsPerBoard": "{count} slots",
+        "totalItems": "{count, plural, =1 {card} other {cards}}"
+      },
+      "experience": {
+        "title": "Game Experience",
+        "headline": "When you call a card...",
+        "willMark": "{count} of {total} players",
+        "willMarkAction": "will have it on their board",
+        "tier": {
+          "chaotic": "Chaotic",
+          "competitive": "Fast-Paced",
+          "balanced": "Balanced",
+          "diverse": "Strategic"
+        },
+        "tierDescription": {
+          "chaotic": "Many shout \"Got it!\" — very fast games",
+          "competitive": "Good competition — exciting races",
+          "balanced": "Ideal balance — not too fast, not too slow",
+          "diverse": "Each card feels special and unique"
+        }
+      },
+      "distribution": {
+        "title": "Distribution",
+        "frequency": "×{count}",
+        "items": "{count, plural, =1 {1 item} other {# items}}",
+        "appearances": "Total appearances",
+        "slots": "Required slots"
+      },
+      "validation": {
+        "title": "Validations",
+        "allPassed": "All checks passed",
+        "issuesFound": "{count, plural, =1 {1 issue} other {# issues}} found",
+        "slot_balance": "Slots covered",
+        "min_items": "Enough items",
+        "min_frequency": "All items appear",
+        "max_frequency": "No over-repetition",
+        "feasibility": "Valid config",
+        "unique_boards": "Unique boards",
+        "overlap_quality": "Diversity"
+      },
+      "details": {
+        "show": "Show details",
+        "hide": "Hide details",
+        "total": "Total",
+        "slots": "Slots"
+      },
+      "suggestion": "Suggestion"
+    },
+    "export": {
+      "title": "Export Boards",
+      "ready": "Ready to use!",
+      "noBoards": "No boards to export. Go back and generate boards first.",
+      "boards": "boards",
+      "items": "items",
+      "downloadJSON": "Download JSON",
+      "jsonDescription": "Complete format with all data",
+      "csv": "CSV",
+      "print": "Print",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "showMore": "More options",
+      "hideMore": "Less options",
+      "saveToBrowser": "Save to browser",
+      "browserDescription": "For offline use later"
+    }
+  },
+  "language": {
+    "switch": "Switch language",
+    "current": "Current language: {language}"
+  }
+}

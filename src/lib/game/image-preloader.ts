@@ -9,8 +9,9 @@
  * @see FR-016 Image preloading
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useMemo } from "react";
 import type { ItemDefinition } from "@/lib/types/game";
+import { resolveImageUrl } from "@/lib/storage/image-url";
 
 // ============================================================================
 // TYPES
@@ -59,19 +60,27 @@ export class ImagePreloader {
    *
    * @param items - All items in the deck
    * @param shuffledIds - IDs in shuffled order
-   * @param currentIndex - Current position in the deck
+   * @param currentIndex - Current position in the deck (-1 means before first draw)
    */
   preloadUpcoming(
     items: readonly ItemDefinition[],
     shuffledIds: readonly string[],
     currentIndex: number
   ): void {
-    // Determine which images to preload
-    const startIndex = currentIndex + 1;
+    // When currentIndex is -1 (before first draw), start preloading from index 0
+    const startIndex = Math.max(0, currentIndex + 1);
     const endIndex = Math.min(
       startIndex + this.preloadAhead,
       shuffledIds.length
     );
+
+    if (process.env.NODE_ENV === "development" && startIndex < endIndex) {
+      const idsToPreload = shuffledIds.slice(startIndex, endIndex);
+      console.log(
+        `[Preloader] currentIndex=${currentIndex}, preloading indices ${startIndex}-${endIndex - 1}:`,
+        idsToPreload
+      );
+    }
 
     for (let i = startIndex; i < endIndex; i++) {
       const itemId = shuffledIds[i];
@@ -95,34 +104,60 @@ export class ImagePreloader {
 
   /**
    * Preload a single image by ID and URL.
+   * Uses Next.js Image optimization URL format to share cache with <Image> component.
+   * Preloads multiple sizes to maximize cache hits across different components.
    */
   private preloadImage(id: string, url: string): void {
+    // Resolve relative URLs to full R2 URLs
+    const resolvedUrl = resolveImageUrl(url);
+    
+    // Preload multiple widths to cover different use cases:
+    // - 256: HistoryStrip small cards (64-96px * 2x-3x retina)
+    // - 384: MiniCard (120px * 2x-3x retina)
+    // - 828: CurrentCard main display (380px * 2x retina)
+    const widths = [256, 384, 828];
+    
     const entry: PreloadedImage = {
-      url,
+      url: resolvedUrl,
       status: "loading",
     };
 
     this.cache.set(id, entry);
 
-    const img = new Image();
+    let loadedCount = 0;
+    const totalToLoad = widths.length;
 
-    img.onload = () => {
-      const cached = this.cache.get(id);
-      if (cached) {
-        cached.status = "loaded";
-        cached.image = img;
-      }
-    };
+    widths.forEach((w) => {
+      const nextImageUrl = `/_next/image?url=${encodeURIComponent(resolvedUrl)}&w=${w}&q=75`;
+      const img = new Image();
 
-    img.onerror = (err) => {
-      const cached = this.cache.get(id);
-      if (cached) {
-        cached.status = "error";
-        cached.error = new Error(`Failed to load image: ${url}`);
-      }
-    };
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === totalToLoad) {
+          const cached = this.cache.get(id);
+          if (cached) {
+            cached.status = "loaded";
+            cached.image = img;
+            if (process.env.NODE_ENV === "development") {
+              console.log(`[Preloader] ✓ Loaded: ${url.split("/").pop()}`);
+            }
+          }
+        }
+      };
 
-    img.src = url;
+      img.onerror = () => {
+        const cached = this.cache.get(id);
+        if (cached && cached.status !== "loaded") {
+          cached.status = "error";
+          cached.error = new Error(`Failed to load image: ${resolvedUrl}`);
+          if (process.env.NODE_ENV === "development") {
+            console.warn(`[Preloader] ✗ Failed: ${url.split("/").pop()}`);
+          }
+        }
+      };
+
+      img.src = nextImageUrl;
+    });
   }
 
   /**
@@ -206,14 +241,11 @@ export function useImagePreloader(
   currentIndex: number,
   preloadAhead: number = 3
 ): ImagePreloader {
-  const preloaderRef = useRef<ImagePreloader | null>(null);
-
-  // Initialize preloader
-  if (!preloaderRef.current) {
-    preloaderRef.current = new ImagePreloader(preloadAhead);
-  }
-
-  const preloader = preloaderRef.current;
+  // Use useMemo for stable initialization (safe during render)
+  const preloader = useMemo(
+    () => new ImagePreloader(preloadAhead),
+    [preloadAhead]
+  );
 
   // Preload when index changes
   useEffect(() => {
@@ -223,9 +255,9 @@ export function useImagePreloader(
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      preloaderRef.current?.clear();
+      preloader.clear();
     };
-  }, []);
+  }, [preloader]);
 
   return preloader;
 }

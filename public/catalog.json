@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-01-15T10:30:00Z",
+  "decks": [
+    {
+      "id": "demo-barranquilla",
+      "name": "Tabula de Barranquilla",
+      "description": "Un recorrido por la cultura, gastronomía e historia de Barranquilla y la Costa Caribe colombiana.",
+      "language": "es",
+      "itemCount": 36,
+      "category": "Ciudades",
+      "region": "Caribe",
+      "thumbnailUrl": "/decks/demo/placeholder.svg",
+      "manifestUrl": "/decks/demo/manifest.json",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "tags": [
+        "barranquilla",
+        "caribe",
+        "gastronomía",
+        "cultura",
+        "historia",
+        "carnaval",
+        "personajes",
+        "objetos tradicionales",
+        "naturaleza"
+      ]
+    }
+  ]
+}
+

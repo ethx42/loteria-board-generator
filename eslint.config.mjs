@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Netlify build artifacts:
+    ".netlify/**",
+    // Test files (handled by vitest):
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
   ]),
 ]);
 

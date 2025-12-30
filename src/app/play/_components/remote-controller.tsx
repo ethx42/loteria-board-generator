@@ -6,6 +6,11 @@
  * Mobile-optimized controller interface for untethered game control.
  * Designed for one-handed operation with thumb-reachable controls.
  *
+ * ## Design:
+ * - Pure presentational component
+ * - Sound logic handled by parent via useSoundSync hook
+ * - Receives all state and callbacks as props
+ *
  * Layout Zones (per SRD §5.2):
  * - Top: Connection status
  * - Middle: Mini card preview
@@ -20,10 +25,13 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pause, Play, History, RotateCcw, LogOut } from "lucide-react";
 import type { GameStatus, ItemDefinition } from "@/lib/types/game";
+import type { SoundSourceType } from "@/lib/audio";
 import { ConnectionStatusIndicator, type ConnectionStatus } from "./connection-status";
 import { DrawButton } from "./draw-button";
-import { MiniCard } from "./mini-card";
+import { ControllerCurrentCard } from "./controller-current-card";
 import { HistoryModal } from "./history-modal";
+import { SoundSyncModal } from "@/components/sound-sync-modal";
+import { SoundControlMenu } from "@/components/sound-control-menu";
 
 // ============================================================================
 // TYPES
@@ -38,6 +46,55 @@ export interface ControllerGameState {
   totalItems: number;
   status: GameStatus;
   historyCount: number;
+  /** Full history of played cards (v4.0: for history modal) */
+  history: readonly ItemDefinition[];
+  /** Whether the current card is flipped (showing longText) - synced from Host */
+  isFlipped?: boolean;
+  /** Whether the detailed text accordion is expanded - synced from Host */
+  isDetailedExpanded?: boolean;
+}
+
+/**
+ * Sound sync state passed from parent (from useSoundSync hook)
+ */
+export interface ControllerSoundState {
+  /** Whether sound is enabled locally on Controller */
+  isLocalEnabled: boolean;
+
+  /** Whether sound is enabled on Host (null if unknown) */
+  isHostEnabled: boolean | null;
+
+  /** Whether there's a pending sync request from Host */
+  hasPendingSync: boolean;
+
+  /** The pending sync details (if any) */
+  pendingSync: { enabled: boolean; source: SoundSourceType } | null;
+}
+
+/**
+ * Sound sync actions passed from parent (from useSoundSync hook)
+ */
+export interface ControllerSoundActions {
+  /** Toggle sound on this device only */
+  onToggleLocal: () => void;
+
+  /** Toggle sound on Host (sends command to Host) */
+  onToggleHost: () => void;
+
+  /** Toggle sound on both devices (legacy) */
+  onToggleBoth?: () => void;
+
+  /** Set sound on both devices to a specific state (preferred) */
+  onSetBoth?: (enabled: boolean) => void;
+
+  /** Accept pending sync from Host */
+  onAcceptSync: () => void;
+
+  /** Decline pending sync from Host */
+  onDeclineSync: () => void;
+
+  /** Dismiss sync prompts for this session */
+  onDismissSync: () => void;
 }
 
 interface RemoteControllerProps {
@@ -68,8 +125,21 @@ interface RemoteControllerProps {
   /** Callback to disconnect and go back */
   onDisconnect?: () => void;
 
+  /** Callback when card flip state changes (to broadcast to host) */
+  onFlipChange?: (isFlipped: boolean) => void;
+
+  /** Callback when detailed text expansion changes (to broadcast to host) */
+  onDetailedChange?: (isExpanded: boolean) => void;
+
   /** Whether reduced motion is preferred */
   reducedMotion?: boolean;
+
+  // v4.0: Sound (from useSoundSync)
+  /** Sound state from useSoundSync */
+  sound: ControllerSoundState;
+
+  /** Sound actions from useSoundSync */
+  soundActions: ControllerSoundActions;
 }
 
 // ============================================================================
@@ -135,7 +205,11 @@ export function RemoteController({
   onReset,
   onRetryConnection,
   onDisconnect,
+  onFlipChange,
+  onDetailedChange,
   reducedMotion = false,
+  sound,
+  soundActions,
 }: RemoteControllerProps) {
   const [isHistoryOpen, setHistoryOpen] = useState(false);
 
@@ -177,28 +251,18 @@ export function RemoteController({
         />
       </header>
 
-      {/* ====== MIDDLE ZONE: Mini Card Preview ====== */}
-      <section className="flex flex-1 flex-col items-center justify-center px-4 py-4">
-        <MiniCard
+      {/* ====== MIDDLE ZONE: Current Card Display ====== */}
+      <section className="flex flex-1 flex-col items-center justify-center px-4 py-2 overflow-y-auto">
+        <ControllerCurrentCard
           item={gameState.currentItem}
+          cardNumber={currentCard}
+          totalCards={totalCards}
           reducedMotion={reducedMotion}
+          hostFlipState={gameState.isFlipped}
+          onFlipChange={onFlipChange}
+          hostDetailedState={gameState.isDetailedExpanded}
+          onDetailedChange={onDetailedChange}
         />
-
-        {/* Short text preview (if available) */}
-        <AnimatePresence mode="wait">
-          {gameState.currentItem?.shortText && (
-            <motion.p
-              key={gameState.currentItem.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mt-4 max-w-[280px] text-center font-serif text-sm leading-relaxed text-amber-200/80"
-            >
-              {gameState.currentItem.shortText.slice(0, 100)}
-              {gameState.currentItem.shortText.length > 100 ? "..." : ""}
-            </motion.p>
-          )}
-        </AnimatePresence>
       </section>
 
       {/* ====== MAIN ZONE: Giant Draw Button (Thumb Zone) ====== */}
@@ -248,6 +312,16 @@ export function RemoteController({
             />
           )}
 
+          {/* Sound Control Menu (v4.0) */}
+          <SoundControlMenu
+            isLocalEnabled={sound.isLocalEnabled}
+            isHostEnabled={sound.isHostEnabled}
+            onToggleLocal={soundActions.onToggleLocal}
+            onToggleHost={soundActions.onToggleHost}
+            onToggleBoth={soundActions.onToggleBoth}
+            onSetBoth={soundActions.onSetBoth}
+          />
+
           {/* Disconnect */}
           {onDisconnect && (
             <SecondaryButton
@@ -277,13 +351,22 @@ export function RemoteController({
         </div>
       </footer>
 
-      {/* History Modal - Note: Controller doesn't have full history, just count */}
-      {/* In a full implementation, we'd request history from host or cache it locally */}
+      {/* History Modal */}
       <HistoryModal
         isOpen={isHistoryOpen}
         onClose={handleCloseHistory}
-        history={[]} // Controller doesn't have history items, only count
+        history={gameState.history}
         currentItem={gameState.currentItem}
+        reducedMotion={reducedMotion}
+      />
+
+      {/* v4.0: Sound Sync Modal - Shows when Host changes sound preference */}
+      <SoundSyncModal
+        isOpen={sound.hasPendingSync}
+        hostSoundEnabled={sound.pendingSync?.enabled ?? false}
+        onAccept={soundActions.onAcceptSync}
+        onDecline={soundActions.onDeclineSync}
+        onDismiss={soundActions.onDismissSync}
         reducedMotion={reducedMotion}
       />
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { List, Grid3X3, BarChart3, Eye, Download, Check } from "lucide-react";
+import { Users, Grid3X3, List, BarChart3, Eye, Download, Check } from "lucide-react";
 import { useCurrentStep, useGeneratorStore } from "@/stores/generator-store";
 import { cn } from "@/lib/utils";
 import type { WizardStep } from "@/lib/types";
@@ -12,15 +12,26 @@ interface StepInfo {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+/**
+ * Players-First Flow
+ * 
+ * 1. Players: How many will play? (context for all calculations)
+ * 2. Grid: What board size? (shows item recommendations)
+ * 3. Items: Add items (with progress toward goal)
+ * 4. Distribution: Fine-tune
+ * 5. Preview: Generate
+ * 6. Export: Download
+ */
 const steps: StepInfo[] = [
+  { id: "players", title: "Players", icon: Users },
+  { id: "board", title: "Grid", icon: Grid3X3 },
   { id: "items", title: "Items", icon: List },
-  { id: "board", title: "Board", icon: Grid3X3 },
-  { id: "distribution", title: "Distribution", icon: BarChart3 },
+  { id: "distribution", title: "Review", icon: BarChart3 },
   { id: "preview", title: "Preview", icon: Eye },
   { id: "export", title: "Export", icon: Download },
 ];
 
-const stepOrder: WizardStep[] = ["items", "board", "distribution", "preview", "export"];
+const stepOrder: WizardStep[] = ["players", "board", "items", "distribution", "preview", "export"];
 
 export function StepIndicator() {
   const currentStep = useCurrentStep();

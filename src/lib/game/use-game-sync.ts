@@ -8,7 +8,7 @@
  * @see SRD §3.4 Realtime Protocol
  */
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useGameStore } from "@/stores/game-store";
 import {
   useGameSocket,
@@ -57,6 +57,20 @@ interface GameSyncActions {
 
   /** Manually disconnect from the server */
   disconnect: () => void;
+
+  // v4.0: History modal sync
+  /** Open history modal (syncs to other party) */
+  openHistory: () => void;
+
+  /** Close history modal (syncs to other party) */
+  closeHistory: () => void;
+
+  // v4.0: Sound preference sync
+  /** Broadcast sound preference change to other party (local scope) */
+  sendSoundPreference: (enabled: boolean) => void;
+
+  /** (Controller only) Toggle sound on all devices */
+  sendSoundPreferenceAll: (enabled: boolean) => void;
 }
 
 interface GameSyncState {
@@ -71,6 +85,17 @@ interface GameSyncState {
 
   /** Any error that occurred */
   error: string | null;
+
+  // v4.0: History modal sync
+  /** Whether history modal is open (synced between Host/Controller) */
+  isHistoryOpen: boolean;
+
+  // v4.0: Sound preference sync
+  /** Pending sound preference change from other party (null if none) */
+  pendingSoundSync: { enabled: boolean; source: "host" | "controller" } | null;
+
+  /** Clear the pending sound sync after handling */
+  clearPendingSoundSync: () => void;
 }
 
 export type UseGameSyncReturn = GameSyncState & GameSyncActions;
@@ -127,6 +152,15 @@ export function useHostSync(options: UseGameSyncOptions): UseGameSyncReturn {
   const storeError = useGameStore((state) => state.error);
   const setError = useGameStore((state) => state.setError);
 
+  // v4.0: History modal sync state
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // v4.0: Sound preference sync state
+  const [pendingSoundSync, setPendingSoundSync] = useState<{
+    enabled: boolean;
+    source: "host" | "controller";
+  } | null>(null);
+
   // WebSocket connection
   const socket = useGameSocket({
     roomId,
@@ -161,6 +195,25 @@ export function useHostSync(options: UseGameSyncOptions): UseGameSyncReturn {
 
         case "RESET_GAME":
           resetSessionStore();
+          break;
+
+        // v4.0: History modal sync from Controller
+        case "OPEN_HISTORY":
+          setIsHistoryOpen(true);
+          break;
+
+        case "CLOSE_HISTORY":
+          setIsHistoryOpen(false);
+          break;
+
+        // v4.0: Sound preference sync from Controller
+        case "SOUND_PREFERENCE":
+          if (message.source === "controller" && (message.scope === "both" || message.scope === "host_only")) {
+            // Controller commands Host to change sound
+            // Execute silently - Controller has precedence
+            setPendingSoundSync({ enabled: message.enabled, source: "controller" });
+          }
+          // Note: scope: "local" from Controller is never relayed to Host
           break;
       }
     });
@@ -227,6 +280,38 @@ export function useHostSync(options: UseGameSyncOptions): UseGameSyncReturn {
     resetSessionStore();
   }, [resetSessionStore]);
 
+  // v4.0: History modal sync actions
+  const openHistory = useCallback(() => {
+    setIsHistoryOpen(true);
+    socket.openHistory();
+  }, [socket]);
+
+  const closeHistory = useCallback(() => {
+    setIsHistoryOpen(false);
+    socket.closeHistory();
+  }, [socket]);
+
+  // v4.0: Sound preference sync actions
+  // Host always sends with "local" scope - Controller decides whether to sync
+  const sendSoundPreference = useCallback(
+    (enabled: boolean) => {
+      socket.sendSoundPreference(enabled, "host", "local");
+    },
+    [socket]
+  );
+
+  // Host doesn't have "both" functionality (Controller has precedence)
+  const sendSoundPreferenceAll = useCallback(
+    (_enabled: boolean) => {
+      // No-op for Host - only Controller can command all devices
+    },
+    []
+  );
+
+  const clearPendingSoundSync = useCallback(() => {
+    setPendingSoundSync(null);
+  }, []);
+
   const connectionStatus = mapConnectionStatus(socket.status);
 
   return {
@@ -234,10 +319,17 @@ export function useHostSync(options: UseGameSyncOptions): UseGameSyncReturn {
     connectionStatus,
     isConnected: socket.status === "connected",
     error: storeError,
+    isHistoryOpen,
+    pendingSoundSync,
+    clearPendingSoundSync,
     drawCard,
     pauseGame,
     resumeGame,
     resetGame,
+    openHistory,
+    closeHistory,
+    sendSoundPreference,
+    sendSoundPreferenceAll,
     connect: socket.connect,
     disconnect: socket.disconnect,
   };
@@ -273,6 +365,16 @@ export function useControllerSync(options: UseGameSyncOptions): UseGameSyncRetur
   const storeError = useGameStore((state) => state.error);
   const setError = useGameStore((state) => state.setError);
 
+  // v4.0: History modal sync state and data
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyData, setHistoryData] = useState<readonly import("@/lib/types/game").ItemDefinition[]>([]);
+
+  // v4.0: Sound preference sync state
+  const [pendingSoundSync, setPendingSoundSync] = useState<{
+    enabled: boolean;
+    source: "host" | "controller";
+  } | null>(null);
+
   // WebSocket connection
   const socket = useGameSocket({
     roomId,
@@ -286,8 +388,6 @@ export function useControllerSync(options: UseGameSyncOptions): UseGameSyncRetur
         const { payload } = message;
 
         // Update local session with Host state
-        // Note: Controller keeps its own history locally for now
-        // Full history sync happens via FULL_STATE_SYNC on reconnect
         loadSession({
           ...session,
           currentIndex: payload.currentIndex,
@@ -295,6 +395,16 @@ export function useControllerSync(options: UseGameSyncOptions): UseGameSyncRetur
           status: payload.status,
           totalItems: payload.totalItems,
         });
+
+        // v4.0: Sync history modal state
+        if (payload.isHistoryOpen !== undefined) {
+          setIsHistoryOpen(payload.isHistoryOpen);
+        }
+
+        // v4.0: Store history data when modal is open
+        if (payload.history) {
+          setHistoryData(payload.history);
+        }
       }
 
       // Handle full state sync (includes history)
@@ -309,6 +419,23 @@ export function useControllerSync(options: UseGameSyncOptions): UseGameSyncRetur
           totalItems: payload.totalItems,
           history: payload.history,
         });
+
+        // v4.0: Sync history data
+        setHistoryData(payload.history);
+      }
+
+      // v4.0: History modal sync from Host
+      if (message.type === "OPEN_HISTORY") {
+        setIsHistoryOpen(true);
+      }
+
+      if (message.type === "CLOSE_HISTORY") {
+        setIsHistoryOpen(false);
+      }
+
+      // v4.0: Sound preference sync from Host
+      if (message.type === "SOUND_PREFERENCE" && message.source === "host") {
+        setPendingSoundSync({ enabled: message.enabled, source: "host" });
       }
     });
 
@@ -347,17 +474,63 @@ export function useControllerSync(options: UseGameSyncOptions): UseGameSyncRetur
     socket.resetGame();
   }, [socket]);
 
+  // v4.0: History modal sync actions
+  const openHistory = useCallback(() => {
+    setIsHistoryOpen(true);
+    socket.openHistory();
+  }, [socket]);
+
+  const closeHistory = useCallback(() => {
+    setIsHistoryOpen(false);
+    socket.closeHistory();
+  }, [socket]);
+
+  // v4.0: Sound preference sync actions
+  // Controller uses "local" scope for single-device change (not relayed)
+  const sendSoundPreference = useCallback(
+    (enabled: boolean) => {
+      // Local scope: just change on Controller, no network message needed
+      // (The server ignores scope: "local" from Controller anyway)
+      socket.sendSoundPreference(enabled, "controller", "local");
+    },
+    [socket]
+  );
+
+  // Controller uses "both" scope to command both devices
+  const sendSoundPreferenceAll = useCallback(
+    (enabled: boolean) => {
+      socket.sendSoundPreference(enabled, "controller", "both");
+    },
+    [socket]
+  );
+
+  const clearPendingSoundSync = useCallback(() => {
+    setPendingSoundSync(null);
+  }, []);
+
   const connectionStatus = mapConnectionStatus(socket.status);
 
+  // v4.0: Extend session with history data for controller
+  const sessionWithHistory = session
+    ? { ...session, history: historyData.length > 0 ? historyData : session.history }
+    : null;
+
   return {
-    session,
+    session: sessionWithHistory,
     connectionStatus,
     isConnected: socket.status === "connected",
     error: storeError,
+    isHistoryOpen,
+    pendingSoundSync,
+    clearPendingSoundSync,
     drawCard,
     pauseGame,
     resumeGame,
     resetGame,
+    openHistory,
+    closeHistory,
+    sendSoundPreference,
+    sendSoundPreferenceAll,
     connect: socket.connect,
     disconnect: socket.disconnect,
   };

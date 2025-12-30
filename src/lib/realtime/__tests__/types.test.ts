@@ -13,6 +13,9 @@ import {
   isGameCommand,
   isStateUpdate,
   isConnectionEvent,
+  isHistoryModalMessage,
+  isSpectatorMessage,
+  isReactionEmoji,
   createRoomMessage,
   joinRoomMessage,
   drawCardMessage,
@@ -21,10 +24,17 @@ import {
   resetGameMessage,
   stateUpdateMessage,
   pingMessage,
+  openHistoryMessage,
+  closeHistoryMessage,
+  sendReactionMessage,
+  reactionBurstMessage,
+  spectatorCountMessage,
   serializeMessage,
   parseMessage,
+  REACTION_EMOJIS,
   type WSMessage,
   type StateUpdatePayload,
+  type ReactionEmoji,
 } from "../types";
 
 // ============================================================================
@@ -141,6 +151,36 @@ describe("isWSMessage", () => {
           message: "Room does not exist",
         })
       ).toBe(true);
+    });
+  });
+
+  describe("v4.0 history modal messages", () => {
+    it("should validate OPEN_HISTORY message", () => {
+      expect(isWSMessage({ type: "OPEN_HISTORY" })).toBe(true);
+    });
+
+    it("should validate CLOSE_HISTORY message", () => {
+      expect(isWSMessage({ type: "CLOSE_HISTORY" })).toBe(true);
+    });
+  });
+
+  describe("v4.0 spectator messages", () => {
+    it("should validate SEND_REACTION message", () => {
+      expect(isWSMessage({ type: "SEND_REACTION", emoji: "👏" })).toBe(true);
+    });
+
+    it("should validate REACTION_BURST message", () => {
+      expect(
+        isWSMessage({
+          type: "REACTION_BURST",
+          reactions: [{ emoji: "👏", count: 5 }],
+          timestamp: Date.now(),
+        })
+      ).toBe(true);
+    });
+
+    it("should validate SPECTATOR_COUNT message", () => {
+      expect(isWSMessage({ type: "SPECTATOR_COUNT", count: 10 })).toBe(true);
     });
   });
 
@@ -268,6 +308,79 @@ describe("isConnectionEvent", () => {
 });
 
 // ============================================================================
+// v4.0 Type Guards Tests
+// ============================================================================
+
+describe("isHistoryModalMessage", () => {
+  it("should return true for OPEN_HISTORY", () => {
+    const msg: WSMessage = { type: "OPEN_HISTORY" };
+    expect(isHistoryModalMessage(msg)).toBe(true);
+  });
+
+  it("should return true for CLOSE_HISTORY", () => {
+    const msg: WSMessage = { type: "CLOSE_HISTORY" };
+    expect(isHistoryModalMessage(msg)).toBe(true);
+  });
+
+  it("should return false for game commands", () => {
+    const msg: WSMessage = { type: "DRAW_CARD" };
+    expect(isHistoryModalMessage(msg)).toBe(false);
+  });
+
+  it("should return false for state updates", () => {
+    const msg: WSMessage = { type: "STATE_UPDATE", payload: validStatePayload };
+    expect(isHistoryModalMessage(msg)).toBe(false);
+  });
+});
+
+describe("isSpectatorMessage", () => {
+  it("should return true for SEND_REACTION", () => {
+    const msg: WSMessage = { type: "SEND_REACTION", emoji: "👏" };
+    expect(isSpectatorMessage(msg)).toBe(true);
+  });
+
+  it("should return true for REACTION_BURST", () => {
+    const msg: WSMessage = {
+      type: "REACTION_BURST",
+      reactions: [{ emoji: "👏", count: 3 }],
+      timestamp: Date.now(),
+    };
+    expect(isSpectatorMessage(msg)).toBe(true);
+  });
+
+  it("should return true for SPECTATOR_COUNT", () => {
+    const msg: WSMessage = { type: "SPECTATOR_COUNT", count: 5 };
+    expect(isSpectatorMessage(msg)).toBe(true);
+  });
+
+  it("should return false for game commands", () => {
+    const msg: WSMessage = { type: "DRAW_CARD" };
+    expect(isSpectatorMessage(msg)).toBe(false);
+  });
+
+  it("should return false for history modal messages", () => {
+    const msg: WSMessage = { type: "OPEN_HISTORY" };
+    expect(isSpectatorMessage(msg)).toBe(false);
+  });
+});
+
+describe("isReactionEmoji", () => {
+  it("should return true for valid reaction emojis", () => {
+    for (const emoji of REACTION_EMOJIS) {
+      expect(isReactionEmoji(emoji)).toBe(true);
+    }
+  });
+
+  it("should return false for invalid emojis", () => {
+    expect(isReactionEmoji("💩")).toBe(false);
+    expect(isReactionEmoji("")).toBe(false);
+    expect(isReactionEmoji("👏👏")).toBe(false);
+    expect(isReactionEmoji(123)).toBe(false);
+    expect(isReactionEmoji(null)).toBe(false);
+  });
+});
+
+// ============================================================================
 // Message Factory Tests
 // ============================================================================
 
@@ -360,6 +473,79 @@ describe("Message Factories", () => {
       expect(msg.timestamp).toBeGreaterThanOrEqual(before);
       expect(msg.timestamp).toBeLessThanOrEqual(after);
       expect(isWSMessage(msg)).toBe(true);
+    });
+  });
+
+  // v4.0 message factories
+  describe("openHistoryMessage", () => {
+    it("should create valid OPEN_HISTORY message", () => {
+      const msg = openHistoryMessage();
+      expect(msg.type).toBe("OPEN_HISTORY");
+      expect(isWSMessage(msg)).toBe(true);
+      expect(isHistoryModalMessage(msg)).toBe(true);
+    });
+  });
+
+  describe("closeHistoryMessage", () => {
+    it("should create valid CLOSE_HISTORY message", () => {
+      const msg = closeHistoryMessage();
+      expect(msg.type).toBe("CLOSE_HISTORY");
+      expect(isWSMessage(msg)).toBe(true);
+      expect(isHistoryModalMessage(msg)).toBe(true);
+    });
+  });
+
+  describe("sendReactionMessage", () => {
+    it("should create valid SEND_REACTION message with emoji", () => {
+      const emoji: ReactionEmoji = "🎉";
+      const msg = sendReactionMessage(emoji);
+      expect(msg.type).toBe("SEND_REACTION");
+      expect(msg.emoji).toBe("🎉");
+      expect(isWSMessage(msg)).toBe(true);
+    });
+
+    it("should work with all valid emojis", () => {
+      for (const emoji of REACTION_EMOJIS) {
+        const msg = sendReactionMessage(emoji);
+        expect(msg.emoji).toBe(emoji);
+      }
+    });
+  });
+
+  describe("reactionBurstMessage", () => {
+    it("should create valid REACTION_BURST message", () => {
+      const before = Date.now();
+      const msg = reactionBurstMessage([
+        { emoji: "👏", count: 5 },
+        { emoji: "🎉", count: 3 },
+      ]);
+      const after = Date.now();
+
+      expect(msg.type).toBe("REACTION_BURST");
+      expect(msg.reactions).toHaveLength(2);
+      expect(msg.reactions[0]).toEqual({ emoji: "👏", count: 5 });
+      expect(msg.timestamp).toBeGreaterThanOrEqual(before);
+      expect(msg.timestamp).toBeLessThanOrEqual(after);
+      expect(isWSMessage(msg)).toBe(true);
+    });
+
+    it("should handle empty reactions array", () => {
+      const msg = reactionBurstMessage([]);
+      expect(msg.reactions).toHaveLength(0);
+    });
+  });
+
+  describe("spectatorCountMessage", () => {
+    it("should create valid SPECTATOR_COUNT message", () => {
+      const msg = spectatorCountMessage(42);
+      expect(msg.type).toBe("SPECTATOR_COUNT");
+      expect(msg.count).toBe(42);
+      expect(isWSMessage(msg)).toBe(true);
+    });
+
+    it("should handle zero spectators", () => {
+      const msg = spectatorCountMessage(0);
+      expect(msg.count).toBe(0);
     });
   });
 });
@@ -535,6 +721,17 @@ describe("Edge Cases", () => {
     };
     const msg = stateUpdateMessage(payload);
     expect(msg.payload.historyCount).toBe(1000000);
+  });
+
+  it("should handle v4.0 StateUpdatePayload with history modal state", () => {
+    const payload: StateUpdatePayload = {
+      ...validStatePayload,
+      isHistoryOpen: true,
+      history: [validStatePayload.currentItem!],
+    };
+    const msg = stateUpdateMessage(payload);
+    expect(msg.payload.isHistoryOpen).toBe(true);
+    expect(msg.payload.history).toHaveLength(1);
   });
 });
 

@@ -49,6 +49,9 @@ export interface ItemDefinition {
   /** Extended text shown on card flip (optional) */
   readonly longText?: string;
 
+  /** Deep-dive text for curious users, accessible via an expand action (optional) */
+  readonly detailedText?: string;
+
   /** Category for grouping (optional) */
   readonly category?: string;
 
@@ -337,6 +340,7 @@ export function isItemDefinition(value: unknown): value is ItemDefinition {
     typeof item.shortText === "string" &&
     item.shortText.length > 0 &&
     (item.longText === undefined || typeof item.longText === "string") &&
+    (item.detailedText === undefined || typeof item.detailedText === "string") &&
     (item.category === undefined || typeof item.category === "string") &&
     (item.themeColor === undefined || typeof item.themeColor === "string")
   );

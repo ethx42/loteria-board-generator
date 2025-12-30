@@ -123,3 +123,153 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================================
+ * UTILITY: Scrollbar Hidden
+ * Use: className="scrollbar-none"
+ * Hides scrollbar while maintaining scroll functionality
+ * ============================================================================ */
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+/* ============================================================================
+ * HOST DISPLAY: Premium Visual Effects
+ * ============================================================================ */
+
+/* Card shine effect animation */
+@keyframes card-shine {
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateX(200%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+/* Subtle float animation for placeholder cards */
+@keyframes gentle-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Premium glow pulse for active elements */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--glow-color, rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    box-shadow: 0 0 35px var(--glow-color, rgba(245, 158, 11, 0.6));
+  }
+}
+
+/* History strip fade effect - ensures smooth gradient at edges */
+.history-fade-horizontal {
+  mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
+}
+
+.history-fade-vertical {
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 85%,
+    transparent 100%
+  );
+}
+
+/* Glassmorphic panel base styles */
+@layer components {
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(
+      160deg,
+      rgba(120, 53, 15, 0.9) 0%,
+      rgba(69, 26, 3, 0.95) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 4px 30px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Card frame with premium border */
+  .card-frame-premium {
+    position: relative;
+    border-radius: 1rem;
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  .card-frame-premium::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(251, 191, 36, 0.3) 0%,
+      rgba(245, 158, 11, 0.1) 50%,
+      rgba(180, 83, 9, 0.3) 100%
+    );
+    z-index: -1;
+    opacity: 0.8;
+    filter: blur(1px);
+  }
+}
+
+/* Typography refinements for game display */
+@layer base {
+  .font-display {
+    font-family: var(--font-display, "Playfair Display", Georgia, serif);
+    font-feature-settings: "liga" 1, "kern" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .card-shine,
+  .glow-pulse {
+    animation: none !important;
+  }
+  
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

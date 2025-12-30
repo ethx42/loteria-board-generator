@@ -1,19 +1,21 @@
 "use client";
 
 /**
- * Play Landing Page
+ * Play Landing Content
  *
- * Entry point for the game system. Offers two clear paths:
- * - Host a Game: Create a new session and display QR for pairing
- * - Join a Game: Enter a room code to connect as controller
+ * Client component for the play landing page.
+ * Offers two paths: Host a Game or Join a Game.
  *
  * @see SRD §5.9 Session Entry Options
  */
 
-import Link from "next/link";
 import { Monitor, Smartphone } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
-export default function PlayLandingPage() {
+export default function PlayLandingContent() {
+  const t = useTranslations();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-950 via-amber-900 to-amber-950 p-6">
       {/* Background pattern */}
@@ -27,7 +29,7 @@ export default function PlayLandingPage() {
       <div className="relative z-10 w-full max-w-lg text-center">
         {/* Logo */}
         <h1 className="mb-2 font-serif text-6xl font-bold text-amber-100 drop-shadow-lg">
-          Tabula
+          {t("game.title")}
         </h1>
         <p className="mb-12 text-lg text-amber-300/70">
           Your digital Tabula companion
@@ -76,3 +78,4 @@ export default function PlayLandingPage() {
     </div>
   );
 }
+

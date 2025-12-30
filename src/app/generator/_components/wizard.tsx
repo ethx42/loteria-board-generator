@@ -1,10 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useGeneratorStore, useCurrentStep, useIsGenerating } from "@/stores/generator-store";
+import { useCurrentStep, useIsGenerating } from "@/stores/generator-store";
 import { StepIndicator } from "./step-indicator";
-import { StepItems } from "./step-items";
+import { StepPlayers } from "./step-players";
 import { StepBoard } from "./step-board";
+import { StepItems } from "./step-items";
 import { StepDistribution } from "./step-distribution";
 import { StepPreview } from "./step-preview";
 import { StepExport } from "./step-export";
@@ -12,8 +13,9 @@ import { WizardNavigation } from "./wizard-navigation";
 import type { WizardStep } from "@/lib/types";
 
 const stepComponents: Record<WizardStep, React.ComponentType> = {
-  items: StepItems,
+  players: StepPlayers,
   board: StepBoard,
+  items: StepItems,
   distribution: StepDistribution,
   preview: StepPreview,
   export: StepExport,
@@ -25,7 +27,7 @@ export function Wizard() {
   const StepComponent = stepComponents[currentStep];
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl shadow-amber-900/5 border border-amber-100 overflow-hidden">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-amber-900/10 border border-amber-200/50 overflow-hidden">
       {/* Step Indicator */}
       <StepIndicator />
 

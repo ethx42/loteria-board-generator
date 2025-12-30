@@ -3,22 +3,24 @@
 /**
  * HistoryModal Component
  *
- * Full-screen modal displaying all called cards in a responsive grid.
- * Features:
- * - Responsive columns (6/4/3 based on screen size)
- * - Chronological order (first called at top-left)
- * - Current card highlighted
- * - Click to expand and show shortText
+ * Full-screen modal displaying all called cards with enterprise UX:
+ * - Most recent card prominently displayed at top (hero section)
+ * - Reverse chronological order (newest first)
+ * - Clear visual hierarchy with recency indicators
+ * - Responsive grid layout
+ * - Click to expand and show educational text
  *
  * @see SRD §5.7 History Modal
  * @see FR-040 through FR-045
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, Clock, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ItemDefinition } from "@/lib/types/game";
+import { resolveImageUrl } from "@/lib/storage/image-url";
 
 // ============================================================================
 // TYPES
@@ -43,11 +45,62 @@ interface HistoryModalProps {
 
 interface HistoryCardProps {
   item: ItemDefinition;
-  index: number;
+  /** Position in reverse order (0 = most recent) */
+  reverseIndex: number;
+  /** Original chronological position */
+  originalIndex: number;
+  /** Total number of cards */
+  total: number;
   isCurrent: boolean;
   isExpanded: boolean;
   onClick: () => void;
   reducedMotion?: boolean;
+}
+
+interface HeroCardProps {
+  item: ItemDefinition;
+  total: number;
+  isExpanded: boolean;
+  onClick: () => void;
+  reducedMotion?: boolean;
+}
+
+// ============================================================================
+// RECENCY HELPERS
+// ============================================================================
+
+/**
+ * Get translation key for recency label
+ */
+function getRecencyKey(reverseIndex: number): { key: string; count?: number } {
+  switch (reverseIndex) {
+    case 0:
+      return { key: "justCalled" };
+    case 1:
+      return { key: "previous" };
+    default:
+      return { key: "cardsAgo", count: reverseIndex };
+  }
+}
+
+/**
+ * Get visual prominence based on recency (0 = most recent)
+ */
+function getRecencyStyles(reverseIndex: number): {
+  opacity: number;
+  scale: number;
+  ring: string;
+} {
+  if (reverseIndex === 0) {
+    return { opacity: 1, scale: 1, ring: "ring-2 ring-amber-400" };
+  }
+  if (reverseIndex === 1) {
+    return { opacity: 0.95, scale: 1, ring: "ring-1 ring-amber-500/50" };
+  }
+  if (reverseIndex < 5) {
+    return { opacity: 0.9, scale: 1, ring: "ring-1 ring-white/20" };
+  }
+  return { opacity: 0.8, scale: 1, ring: "ring-1 ring-white/10" };
 }
 
 // ============================================================================
@@ -85,14 +138,31 @@ const modalVariants = {
   },
 };
 
+const heroVariants = {
+  initial: { opacity: 0, scale: 0.9, y: -10 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+};
+
 const cardVariants = {
-  initial: { opacity: 0, scale: 0.8 },
+  initial: { opacity: 0, scale: 0.8, y: 10 },
   animate: (i: number) => ({
     opacity: 1,
     scale: 1,
+    y: 0,
     transition: {
-      delay: i * 0.02,
-      duration: 0.2,
+      delay: 0.1 + i * 0.03, // Stagger after hero
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
     },
   }),
 };
@@ -110,20 +180,128 @@ const expandedVariants = {
 };
 
 // ============================================================================
-// HISTORY CARD COMPONENT
+// HERO CARD COMPONENT (Most Recent)
+// ============================================================================
+
+function HeroCard({ item, total, isExpanded, onClick, reducedMotion }: HeroCardProps) {
+  const t = useTranslations("history");
+  
+  return (
+    <motion.button
+      variants={reducedMotion ? undefined : heroVariants}
+      initial="initial"
+      animate="animate"
+      layout
+      onClick={onClick}
+      className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-amber-800/80 to-amber-900/80 text-left shadow-xl ring-2 ring-amber-400 backdrop-blur-sm transition-transform hover:scale-[1.005] focus:outline-none focus:ring-4 focus:ring-amber-400/50"
+    >
+      <div className="flex flex-col sm:flex-row">
+        {/* Image */}
+        <div className="relative aspect-[4/5] w-full sm:aspect-square sm:w-48 md:w-56 shrink-0">
+          <Image
+            src={resolveImageUrl(item.imageUrl)}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, 224px"
+            priority
+          />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-amber-900/90 sm:block hidden" />
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-1 flex-col justify-center p-4 sm:p-6">
+          {/* Badge */}
+          <div className="mb-2 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-950">
+              <Sparkles className="h-3 w-3" />
+              {t("latestCard")}
+            </span>
+            <span className="text-xs text-amber-300/70">
+              #{total} / {total}
+            </span>
+          </div>
+
+          {/* Name */}
+          <h3 className="font-serif text-xl font-bold text-amber-100 sm:text-2xl md:text-3xl">
+            {item.name}
+          </h3>
+
+          {/* Category */}
+          {item.category && (
+            <span className="mt-2 inline-block w-fit rounded-full bg-amber-700/50 px-3 py-1 text-xs text-amber-200">
+              {item.category}
+            </span>
+          )}
+
+          {/* Short text - show full when expanded */}
+          <p className={`mt-3 text-sm leading-relaxed text-amber-100/80 sm:text-base ${isExpanded ? "" : "line-clamp-2 sm:line-clamp-3"}`}>
+            {item.shortText}
+          </p>
+
+          {/* Expanded: Long text */}
+          <AnimatePresence>
+            {isExpanded && item.longText && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <p className="mt-3 text-sm leading-relaxed text-amber-200/70 italic border-l-2 border-amber-500/50 pl-3">
+                  {item.longText}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Tap hint with expand indicator */}
+          <div className="mt-4 flex items-center gap-2 text-xs text-amber-400/60">
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-3 w-3" />
+                <span>{t("tapToCollapse")}</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-3 w-3" />
+                <span>{t("tapForDetails")}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+// ============================================================================
+// HISTORY CARD COMPONENT (Previous Cards)
 // ============================================================================
 
 function HistoryCard({
   item,
-  index,
+  reverseIndex,
+  originalIndex,
+  total,
   isCurrent,
   isExpanded,
   onClick,
   reducedMotion,
 }: HistoryCardProps) {
+  const t = useTranslations("history");
+  const recencyStyles = getRecencyStyles(reverseIndex);
+  const recency = getRecencyKey(reverseIndex);
+  
+  // Get translated recency label
+  const recencyLabel = recency.count !== undefined
+    ? t("recency.cardsAgo", { count: recency.count })
+    : t(`recency.${recency.key}`);
+
   return (
     <motion.button
-      custom={index}
+      custom={reverseIndex}
       variants={reducedMotion ? undefined : cardVariants}
       initial="initial"
       animate="animate"
@@ -134,39 +312,47 @@ function HistoryCard({
         bg-amber-900/50 text-left
         transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-amber-950
-        ${isCurrent ? "ring-2 ring-amber-400" : "ring-1 ring-white/10"}
+        ${recencyStyles.ring}
         ${isExpanded ? "col-span-1 md:col-span-2" : ""}
       `}
+      style={{ opacity: recencyStyles.opacity }}
     >
       {/* Card Image */}
-      <div className="relative aspect-[2/3] w-full overflow-hidden">
+      <div className="relative aspect-[4/5] w-full overflow-hidden">
         <Image
-          src={item.imageUrl}
+          src={resolveImageUrl(item.imageUrl)}
           alt={item.name}
           fill
           className="object-cover transition-transform duration-200 group-hover:scale-105"
           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
         />
 
-        {/* Current indicator */}
-        {isCurrent && (
-          <div className="absolute right-2 top-2">
-            <span className="rounded-full bg-amber-400 px-2 py-1 text-xs font-bold text-amber-950">
-              Current
-            </span>
-          </div>
-        )}
+        {/* Recency indicator (top-left) */}
+        <div className="absolute left-2 top-2">
+          <span className={`
+            inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium backdrop-blur-sm
+            ${reverseIndex === 0 
+              ? "bg-amber-400 text-amber-950" 
+              : reverseIndex < 3 
+                ? "bg-amber-700/80 text-amber-100" 
+                : "bg-black/50 text-white/80"
+            }
+          `}>
+            <Clock className="h-2.5 w-2.5" />
+            {recencyLabel}
+          </span>
+        </div>
 
-        {/* Card number */}
-        <div className="absolute bottom-2 left-2">
-          <span className="rounded-full bg-black/50 px-2 py-1 text-xs font-mono text-white backdrop-blur-sm">
-            #{index + 1}
+        {/* Card number (top-right) */}
+        <div className="absolute right-2 top-2">
+          <span className="rounded-full bg-black/60 px-2 py-1 text-xs font-mono text-white/90 backdrop-blur-sm">
+            #{originalIndex + 1}
           </span>
         </div>
 
         {/* Name overlay */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
-          <h3 className="font-serif text-sm font-bold text-white md:text-base">
+          <h3 className="font-serif text-sm font-bold text-white md:text-base line-clamp-2">
             {item.name}
           </h3>
         </div>
@@ -194,10 +380,10 @@ function HistoryCard({
               {item.shortText}
             </p>
 
-            {/* Long text hint */}
+            {/* Long text */}
             {item.longText && (
-              <p className="mt-2 text-xs italic text-amber-300/60">
-                Has additional information
+              <p className="mt-2 text-xs italic text-amber-300/70 border-l-2 border-amber-500/30 pl-2">
+                {item.longText}
               </p>
             )}
           </motion.div>
@@ -218,10 +404,18 @@ export function HistoryModal({
   currentItem,
   reducedMotion = false,
 }: HistoryModalProps) {
+  const t = useTranslations("history");
+  const tCommon = useTranslations("common");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Reverse history for display (newest first)
+  const reversedHistory = useMemo(() => [...history].reverse(), [history]);
+  
+  // Get the most recent card (hero) and the rest
+  const mostRecentCard = reversedHistory[0] ?? null;
+  const previousCards = reversedHistory.slice(1);
+
   // Handle card click (FR-045)
-  // Note: expandedId resets naturally when modal reopens due to fresh render
   const handleCardClick = useCallback((itemId: string) => {
     setExpandedId((prev) => (prev === itemId ? null : itemId));
   }, []);
@@ -250,6 +444,13 @@ export function HistoryModal({
     };
   }, [isOpen]);
 
+  // Reset expanded state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setExpandedId(null);
+    }
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -267,62 +468,110 @@ export function HistoryModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative my-8 w-full max-w-6xl rounded-2xl bg-gradient-to-br from-amber-950 to-amber-900 p-4 shadow-2xl ring-1 ring-white/10 md:p-6"
+            className="relative my-4 sm:my-8 w-full max-w-4xl rounded-2xl bg-gradient-to-br from-amber-950 to-amber-900 p-4 shadow-2xl ring-1 ring-white/10 md:p-6"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="history-modal-title"
           >
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
               <div>
                 <h2
                   id="history-modal-title"
-                  className="font-serif text-2xl font-bold text-amber-100 md:text-3xl"
+                  className="font-serif text-xl sm:text-2xl font-bold text-amber-100 md:text-3xl"
                 >
-                  Card History
+                  {t("title")}
                 </h2>
-                <p className="mt-1 text-sm text-amber-300/70">
-                  {history.length} cards called
+                <p className="mt-1 text-xs sm:text-sm text-amber-300/70">
+                  {t("cardsPlayed", { count: history.length })} • {t("newestFirst")}
                 </p>
               </div>
 
               <button
                 onClick={onClose}
                 className="rounded-full bg-amber-800/50 p-2 text-amber-200 transition-colors hover:bg-amber-700/60 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                aria-label="Close history modal"
+                aria-label={tCommon("close")}
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
 
-            {/* Cards Grid (FR-040, FR-044) */}
             {history.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                {history.map((item, index) => (
-                  <HistoryCard
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    isCurrent={currentItem?.id === item.id}
-                    isExpanded={expandedId === item.id}
-                    onClick={() => handleCardClick(item.id)}
-                    reducedMotion={reducedMotion}
-                  />
-                ))}
+              <div className="space-y-6">
+                {/* Hero Section: Most Recent Card */}
+                {mostRecentCard && (
+                  <section aria-label={t("latestCard")}>
+                    <HeroCard
+                      item={mostRecentCard}
+                      total={history.length}
+                      isExpanded={expandedId === mostRecentCard.id}
+                      onClick={() => handleCardClick(mostRecentCard.id)}
+                      reducedMotion={reducedMotion}
+                    />
+                  </section>
+                )}
+
+                {/* Previous Cards Section */}
+                {previousCards.length > 0 && (
+                  <section aria-label={t("previousCards")}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-400/70" />
+                      <h3 className="text-sm font-medium text-amber-300/80">
+                        {t("previousCards")}
+                      </h3>
+                      <span className="text-xs text-amber-400/50">
+                        ({previousCards.length})
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-4 md:grid-cols-5">
+                      {previousCards.map((item, displayIndex) => {
+                        // reverseIndex: 0 = most recent (but hero is index 0, so these start at 1)
+                        const reverseIndex = displayIndex + 1;
+                        // originalIndex: position in original chronological order
+                        const originalIndex = history.length - 1 - reverseIndex;
+                        
+                        return (
+                          <HistoryCard
+                            key={item.id}
+                            item={item}
+                            reverseIndex={reverseIndex}
+                            originalIndex={originalIndex}
+                            total={history.length}
+                            isCurrent={currentItem?.id === item.id}
+                            isExpanded={expandedId === item.id}
+                            onClick={() => handleCardClick(item.id)}
+                            reducedMotion={reducedMotion}
+                          />
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
               </div>
             ) : (
               <div className="flex min-h-[200px] items-center justify-center">
-                <p className="text-center font-serif text-lg text-amber-300/50">
-                  No cards have been called yet
-                </p>
+                <div className="text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-800/30">
+                    <Clock className="h-8 w-8 text-amber-400/50" />
+                  </div>
+                  <p className="font-serif text-lg text-amber-300/50">
+                    {t("empty.title")}
+                  </p>
+                  <p className="mt-2 text-sm text-amber-400/40">
+                    {t("empty.description")}
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Footer hint */}
-            <div className="mt-6 text-center text-sm text-amber-400/50">
-              Click a card to see its educational text
-            </div>
+            {history.length > 0 && (
+              <div className="mt-6 text-center text-xs sm:text-sm text-amber-400/50">
+                {t("tapForDetails")}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

@@ -137,55 +137,82 @@ open http://localhost:3000
 
 iOS blocks insecure WebSocket connections (`ws://`) to private IP addresses. To test the multiplayer game from a mobile device on your local network, use a secure tunnel.
 
-### Quick Start
+### Desktop-Only Testing (Simple)
+
+If you only need to test on desktop (Host + Controller in browser tabs):
 
 ```bash
-# Start everything with mobile tunnel support
-npm run dev:mobile
+# Comment out or remove NEXT_PUBLIC_PARTYKIT_HOST from .env.local
+npm run dev:all
 ```
 
-This starts:
+This uses `localhost:1999` automatically. No tunnel needed.
 
-1. **Next.js** on `localhost:3000`
-2. **PartyKit** on `localhost:1999`
-3. **Cloudflare Tunnel** → Secure HTTPS URL for PartyKit
+### Mobile Testing (Requires Tunnel)
 
-### Setup Steps
+**Important:** Cloudflare generates a **new URL every time** you start the tunnel. You must update `.env.local` each session.
 
-1. **Install Cloudflared** (one-time):
+#### One-Time Setup
+
+```bash
+# Install Cloudflared
+brew install cloudflared
+```
+
+#### Every Session (Required Steps)
+
+1. **Start the tunnel first** to get the URL:
 
    ```bash
-   brew install cloudflared
+   npm run dev:tunnel
    ```
 
-2. **Run with mobile support**:
+2. **Wait for the URL** in terminal output (takes 5-10 seconds):
+
+   ```
+   INF +--------------------------------------------------------------------------------------------+
+   INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+   INF |  https://random-words-here.trycloudflare.com                                               |
+   INF +--------------------------------------------------------------------------------------------+
+   ```
+
+3. **Copy the URL** and update `.env.local`:
+
+   ```bash
+   # ⚠️ IMPORTANT: Use ONLY the hostname, WITHOUT https://
+   # ✅ Correct: random-words-here.trycloudflare.com
+   # ❌ Wrong:   https://random-words-here.trycloudflare.com
+   
+   echo "NEXT_PUBLIC_PARTYKIT_HOST=random-words-here.trycloudflare.com" > .env.local
+   ```
+
+4. **Stop the tunnel** (Ctrl+C) and **start everything together**:
 
    ```bash
    npm run dev:mobile
    ```
 
-3. **Copy the tunnel URL** from terminal output:
+5. **On your mobile device**, open:
+   - `http://YOUR_LAPTOP_IP:3000` (e.g., `http://192.168.1.100:3000`)
+   - Find your IP with: `ifconfig | grep "inet " | grep -v 127.0.0.1`
 
-   ```
-   Your quick Tunnel has been created!
-   Visit it at: https://random-words.trycloudflare.com
-   ```
+#### Quick Reference
 
-4. **Add to `.env.local`**:
-
-   ```bash
-   NEXT_PUBLIC_PARTYKIT_HOST=random-words.trycloudflare.com
-   ```
-
-5. **Restart Next.js** and test from your mobile device
+| Step | Command | Purpose |
+| ---- | ------- | ------- |
+| 1 | `npm run dev:tunnel` | Get new tunnel URL |
+| 2 | Update `.env.local` | Configure Next.js |
+| 3 | `npm run dev:mobile` | Start all servers |
 
 ### Troubleshooting
 
 | Issue                                | Solution                                                     |
 | ------------------------------------ | ------------------------------------------------------------ |
+| WebSocket connection failed          | Tunnel URL in `.env.local` doesn't match current tunnel      |
 | "URL blocked by device restrictions" | Tunnel not running or `.env.local` has wrong URL             |
 | Tunnel URL changed                   | Cloudflare generates new URLs each time; update `.env.local` |
 | Can't reach laptop from phone        | Ensure both devices are on the same WiFi network             |
+| `env: node: No such file or directory` | Run `nvm use` to activate correct Node version            |
 
 ---
 

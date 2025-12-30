@@ -22,8 +22,13 @@ import {
   pauseGameMessage,
   resumeGameMessage,
   resetGameMessage,
+  flipCardMessage,
   stateUpdateMessage,
   pingMessage,
+  openHistoryMessage,
+  closeHistoryMessage,
+  toggleDetailedMessage,
+  soundPreferenceMessage,
 } from "./types";
 import { createDevLogger } from "@/lib/utils/dev-logger";
 
@@ -95,10 +100,33 @@ export interface GameSocketActions {
   resumeGame: () => void;
   /** Send RESET_GAME command (controller only) */
   resetGame: () => void;
+  /** Send FLIP_CARD command to sync card flip state (controller only) */
+  flipCard: (isFlipped: boolean) => void;
 
   // Host actions
   /** Send state update to controller (host only) */
   sendStateUpdate: (payload: StateUpdatePayload) => void;
+
+  // v4.0: History modal sync (bidirectional)
+  /** Open history modal on all connected clients */
+  openHistory: () => void;
+  /** Close history modal on all connected clients */
+  closeHistory: () => void;
+
+  // v4.0: Detailed text toggle (bidirectional)
+  /** Toggle detailed text accordion on all connected clients */
+  toggleDetailed: (isExpanded: boolean) => void;
+
+  // v4.0: Sound preference sync
+  /** Broadcast sound preference change to other party */
+  sendSoundPreference: (
+    enabled: boolean,
+    source: "host" | "controller",
+    scope?: "local" | "host_only" | "both"
+  ) => void;
+
+  /** Send ACK confirming sound preference was applied (Host only) */
+  sendSoundPreferenceAck?: (enabled: boolean, scope: "local" | "host_only" | "both") => void;
 }
 
 /**
@@ -538,6 +566,10 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
     sendCommand(resetGameMessage());
   }, [sendCommand]);
 
+  const flipCard = useCallback((isFlipped: boolean) => {
+    sendCommand(flipCardMessage(isFlipped));
+  }, [sendCommand]);
+
   // ==========================================================================
   // STATE SENDER (Host)
   // ==========================================================================
@@ -562,6 +594,85 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
   );
 
   // ==========================================================================
+  // v4.0: HISTORY MODAL SYNC (Bidirectional)
+  // ==========================================================================
+
+  const openHistory = useCallback(() => {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) {
+      log("Cannot send, not connected");
+      return;
+    }
+    log("Sending: OPEN_HISTORY");
+    socketRef.current.send(serializeMessage(openHistoryMessage()));
+  }, [log]);
+
+  const closeHistory = useCallback(() => {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) {
+      log("Cannot send, not connected");
+      return;
+    }
+    log("Sending: CLOSE_HISTORY");
+    socketRef.current.send(serializeMessage(closeHistoryMessage()));
+  }, [log]);
+
+  // ==========================================================================
+  // v4.0: DETAILED TEXT TOGGLE SYNC
+  // ==========================================================================
+
+  const toggleDetailed = useCallback(
+    (isExpanded: boolean) => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        log("Cannot send, not connected");
+        return;
+      }
+      log("Sending: TOGGLE_DETAILED", isExpanded);
+      socketRef.current.send(
+        serializeMessage(toggleDetailedMessage(isExpanded))
+      );
+    },
+    [log]
+  );
+
+  // ==========================================================================
+  // v4.0: SOUND PREFERENCE SYNC
+  // ==========================================================================
+
+  const sendSoundPreference = useCallback(
+    (
+      enabled: boolean,
+      source: "host" | "controller",
+      scope: "local" | "host_only" | "both" = "local"
+    ) => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        log("Cannot send, not connected");
+        return;
+      }
+      log(
+        `Sending: SOUND_PREFERENCE (enabled: ${enabled}, source: ${source}, scope: ${scope})`
+      );
+      socketRef.current.send(
+        serializeMessage(soundPreferenceMessage(enabled, source, scope))
+      );
+    },
+    [log]
+  );
+
+  const sendSoundPreferenceAck = useCallback(
+    (enabled: boolean, scope: "local" | "host_only" | "both") => {
+      log(`sendSoundPreferenceAck called (enabled: ${enabled}, scope: ${scope}, readyState: ${socketRef.current?.readyState})`);
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        log("Cannot send ACK, not connected");
+        return;
+      }
+      log(`Sending: SOUND_PREFERENCE_ACK (enabled: ${enabled}, scope: ${scope})`);
+      socketRef.current.send(
+        serializeMessage({ type: "SOUND_PREFERENCE_ACK", enabled, scope })
+      );
+    },
+    [log]
+  );
+
+  // ==========================================================================
   // MESSAGE SUBSCRIPTION
   // ==========================================================================
 
@@ -575,29 +686,63 @@ export function useGameSocket(config: GameSocketConfig): UseGameSocketReturn {
   }, []);
 
   // ==========================================================================
-  // RETURN
+  // RETURN (Memoized to prevent unnecessary re-renders)
   // ==========================================================================
 
-  return {
-    // State
-    ...state,
+  // Memoize the return object to maintain referential equality
+  // This prevents useEffects with [socket] as dependency from re-running
+  // when unrelated state changes occur
+  return useMemo(
+    () => ({
+      // State
+      ...state,
 
-    // Actions
-    connect,
-    disconnect,
+      // Actions
+      connect,
+      disconnect,
 
-    // Controller commands
-    drawCard,
-    pauseGame,
-    resumeGame,
-    resetGame,
+      // Controller commands
+      drawCard,
+      pauseGame,
+      resumeGame,
+      resetGame,
+      flipCard,
 
-    // Host commands
-    sendStateUpdate,
+      // Host commands
+      sendStateUpdate,
 
-    // Message subscription
-    onMessage,
-  };
+      // v4.0: History modal sync (bidirectional)
+      openHistory,
+      closeHistory,
+
+      // v4.0: Detailed text toggle (bidirectional)
+      toggleDetailed,
+
+      // v4.0: Sound preference sync
+      sendSoundPreference,
+      sendSoundPreferenceAck,
+
+      // Message subscription
+      onMessage,
+    }),
+    [
+      state,
+      connect,
+      disconnect,
+      drawCard,
+      pauseGame,
+      resumeGame,
+      resetGame,
+      flipCard,
+      sendStateUpdate,
+      openHistory,
+      closeHistory,
+      toggleDetailed,
+      sendSoundPreference,
+      sendSoundPreferenceAck,
+      onMessage,
+    ]
+  );
 }
 
 // ============================================================================

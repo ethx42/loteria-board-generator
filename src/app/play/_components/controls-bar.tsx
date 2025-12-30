@@ -28,6 +28,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import type { GameStatus } from "@/lib/types/game";
+import { SoundToggle } from "@/components/sound-toggle";
 
 // ============================================================================
 // TYPES
@@ -55,6 +56,9 @@ interface ControlsBarProps {
   /** Callback to draw next card */
   onDrawCard: () => void;
 
+  /** Whether draw is currently debounced (1 second cooldown) */
+  isDrawDebounced?: boolean;
+
   /** Callback to pause game */
   onPause: () => void;
 
@@ -72,6 +76,12 @@ interface ControlsBarProps {
 
   /** Callback to disconnect/end session */
   onDisconnect?: () => void;
+
+  /** v4.0: Sound enabled state (from useSoundSync) */
+  isSoundEnabled?: boolean;
+
+  /** v4.0: Callback when sound toggle clicked (from useSoundSync.hostToggle) */
+  onSoundToggle?: () => void;
 
   /** Whether reduced motion is preferred */
   reducedMotion?: boolean;
@@ -171,12 +181,15 @@ export function ControlsBar({
   currentCard,
   totalCards,
   onDrawCard,
+  isDrawDebounced = false,
   onPause,
   onResume,
   onToggleFullscreen,
   onOpenHistory,
   onHoverBottom,
   onDisconnect,
+  isSoundEnabled,
+  onSoundToggle,
   reducedMotion = false,
   className = "",
 }: ControlsBarProps) {
@@ -191,11 +204,14 @@ export function ControlsBar({
   const isPaused = gameStatus === "paused";
   const isPlaying = gameStatus === "playing";
 
+  // Draw button is disabled if can't draw, game finished, or debounce active
+  const isDrawDisabled = !canDraw || isFinished || isDrawDebounced;
+
   const handleDrawCard = useCallback(() => {
-    if (canDraw) {
+    if (canDraw && !isDrawDebounced) {
       onDrawCard();
     }
-  }, [canDraw, onDrawCard]);
+  }, [canDraw, isDrawDebounced, onDrawCard]);
 
   return (
     <>
@@ -267,14 +283,28 @@ export function ControlsBar({
               ) : null}
 
               {/* Draw Card Button (Primary) */}
-              <ControlButton
-                icon={<SkipForward className="h-6 w-6" />}
-                label={currentCard === 0 ? "Draw First Card" : "Draw Next Card"}
-                onClick={handleDrawCard}
-                disabled={!canDraw || isFinished}
-                variant="primary"
-                size="large"
-              />
+              <div className="relative">
+                <ControlButton
+                  icon={<SkipForward className="h-6 w-6" />}
+                  label={
+                    isDrawDebounced
+                      ? "Please wait..."
+                      : currentCard === 0
+                        ? "Draw First Card"
+                        : "Draw Next Card"
+                  }
+                  onClick={handleDrawCard}
+                  disabled={isDrawDisabled}
+                  variant="primary"
+                  size="large"
+                />
+                {/* Cooldown indicator ring */}
+                {isDrawDebounced && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="h-16 w-16 animate-spin rounded-full border-2 border-amber-400/30 border-t-amber-400 md:h-[72px] md:w-[72px]" />
+                  </div>
+                )}
+              </div>
 
               {/* Fullscreen Toggle */}
               <ControlButton
@@ -288,6 +318,16 @@ export function ControlsBar({
                 label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 onClick={onToggleFullscreen}
               />
+
+              {/* Sound Toggle (v4.0) */}
+              {isSoundEnabled !== undefined && onSoundToggle && (
+                <SoundToggle
+                  size="md"
+                  className="h-12 w-12 md:h-14 md:w-14 bg-amber-900/80 hover:bg-amber-800/90"
+                  isEnabled={isSoundEnabled}
+                  onClick={onSoundToggle}
+                />
+              )}
 
               {/* Disconnect Button */}
               {onDisconnect && (
@@ -327,10 +367,15 @@ export function ControlsBar({
               </div>
             </div>
 
-            {/* ESC hint */}
-            <div className="mt-4 text-center text-xs text-amber-400/40">
-              Press <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">ESC</kbd> to
-              toggle controls
+            {/* Keyboard hints */}
+            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-amber-400/40">
+              <span>
+                <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">Space</kbd> draw card
+              </span>
+              <span className="text-amber-700/30">|</span>
+              <span>
+                <kbd className="rounded bg-amber-800/30 px-1.5 py-0.5">C</kbd> toggle controls
+              </span>
             </div>
           </motion.div>
         )}

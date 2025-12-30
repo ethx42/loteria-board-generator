@@ -18,7 +18,7 @@ import type {
   GameStatus,
   GameGeneratedBoard,
 } from "@/lib/types/game";
-import { cryptoShuffle, seededShuffle } from "@/lib/shuffle/crypto-shuffle";
+import { cryptoShuffle } from "@/lib/shuffle/crypto-shuffle";
 
 // ============================================================================
 // TYPES

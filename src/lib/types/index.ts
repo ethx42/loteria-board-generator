@@ -28,6 +28,29 @@ export {
   INITIAL_HOST_UI_STATE,
 } from "./game";
 
+// Re-export board types for v4.0 features
+export type {
+  BoardSize,
+  BoardGenerationStats,
+  BoardDefinition,
+  BoardsManifest,
+  BoardPrediction,
+  PredictionSummary,
+} from "./boards";
+
+export {
+  BOARD_SIZE_PRESETS,
+  isBoardSize,
+  formatBoardSize,
+  parseBoardSize,
+  getBoardSlots,
+  validateBoardDimensions,
+  isBoardGenerationStats,
+  isBoardDefinition,
+  inferBoardSize,
+  isBoardsManifest,
+} from "./boards";
+
 // ============================================================================
 // ITEM TYPES
 // ============================================================================
@@ -208,6 +231,12 @@ export interface ConstraintValidation {
   details?: {
     expected?: number;
     actual?: number;
+    /** Diversity tier for overlap quality */
+    tier?: string;
+    /** Expected overlap value */
+    expectedOverlap?: number;
+    /** Expected overlap as percentage */
+    expectedOverlapPercent?: number;
   };
 }
 
@@ -230,8 +259,17 @@ export interface SystemConstraints {
 // WIZARD STATE
 // ============================================================================
 
-/** Wizard step IDs */
-export type WizardStep = "items" | "board" | "distribution" | "preview" | "export";
+/** 
+ * Wizard step IDs - Players-First Flow
+ * 
+ * 1. players: How many people will play?
+ * 2. board: What grid size for each board?
+ * 3. items: Add game items (with calculated recommendations)
+ * 4. distribution: Fine-tune frequency distribution
+ * 5. preview: Generate and preview boards
+ * 6. export: Download or save boards
+ */
+export type WizardStep = "players" | "board" | "items" | "distribution" | "preview" | "export";
 
 /** Wizard state */
 export interface WizardState {

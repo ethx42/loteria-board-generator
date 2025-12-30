@@ -10,6 +10,8 @@
  */
 
 import type { DeckDefinition, DeckTheme, ItemDefinition } from "../types/game";
+import type { BoardsManifest } from "../types/boards";
+import { normalizeBoards } from "../boards/normalize";
 
 // ============================================================================
 // VALIDATION TYPES
@@ -445,6 +447,146 @@ export async function loadDeckFromFile(file: File): Promise<DeckDefinition> {
 
     reader.readAsText(file);
   });
+}
+
+/**
+ * Loads a deck from a URL (e.g., from R2 storage).
+ * Useful for loading decks from the catalog or external sources.
+ *
+ * @param url - URL to the manifest.json file
+ * @returns Promise resolving to the deck definition
+ * @throws Error if the manifest cannot be loaded or is invalid
+ */
+export async function loadDeckFromUrl(url: string): Promise<DeckDefinition> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load deck: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const json = await response.text();
+  return loadDeckFromJson(json);
+}
+
+// ============================================================================
+// BOARDS LOADING
+// ============================================================================
+
+/**
+ * Attempts to fetch and parse a boards.json from a URL.
+ * @internal
+ */
+async function tryLoadBoards(url: string): Promise<BoardsManifest | null> {
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = await response.text();
+    const data = JSON.parse(json);
+    return normalizeBoards(data);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extracts deck ID from a manifest URL.
+ * Handles both R2 URLs and local paths.
+ *
+ * @example
+ * extractDeckIdFromManifestUrl("https://.../decks/demo-barranquilla/manifest.json")
+ * // returns "demo-barranquilla"
+ *
+ * extractDeckIdFromManifestUrl("/decks/demo/manifest.json")
+ * // returns "demo"
+ *
+ * @internal
+ */
+function extractDeckIdFromManifestUrl(manifestUrl: string): string | null {
+  // Match /decks/{deckId}/manifest.json pattern
+  const match = manifestUrl.match(/\/decks\/([^/]+)\/manifest\.json$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Loads the boards manifest for a deck if available.
+ *
+ * Boards are stored in a separate `boards.json` file alongside the deck manifest.
+ * This allows using pre-generated board distributions (e.g., from the generator
+ * or legacy prototype) with the Board Prediction Engine.
+ *
+ * The loader attempts multiple sources in order:
+ * 1. boards.json next to the manifest URL (e.g., R2)
+ * 2. Local fallback at /decks/{deckId}/boards.json
+ *
+ * This fallback enables development with local boards while the manifest
+ * is served from R2.
+ *
+ * @param manifestUrl - URL to the deck's manifest.json
+ * @returns BoardsManifest if boards.json exists, null otherwise
+ *
+ * @example
+ * ```ts
+ * const boards = await loadBoardsForDeck("/decks/demo/manifest.json");
+ * if (boards) {
+ *   console.log(`Loaded ${boards.totalBoards} boards`);
+ * }
+ * ```
+ *
+ * @see TABULA_V4_SRD §4.3 Board Prediction Engine
+ */
+export async function loadBoardsForDeck(
+  manifestUrl: string
+): Promise<BoardsManifest | null> {
+  // 1. Try loading from the same location as the manifest (e.g., R2)
+  const boardsUrl = manifestUrl.replace(/manifest\.json$/, "boards.json");
+  const fromManifestLocation = await tryLoadBoards(boardsUrl);
+
+  if (fromManifestLocation) {
+    return fromManifestLocation;
+  }
+
+  // 2. Fallback: Try local path for development
+  // This handles the case where manifest is on R2 but boards.json is local
+  const deckId = extractDeckIdFromManifestUrl(manifestUrl);
+
+  if (deckId) {
+    // Build list of local paths to try
+    const localPaths: string[] = [];
+
+    // For demo-barranquilla, try /decks/demo/ first (legacy local structure)
+    if (deckId === "demo-barranquilla") {
+      localPaths.push("/decks/demo/boards.json");
+    }
+
+    // Try standard structure /decks/{deckId}/
+    localPaths.push(`/decks/${deckId}/boards.json`);
+
+    for (const localPath of localPaths) {
+      const fromLocal = await tryLoadBoards(localPath);
+      if (fromLocal) {
+        return fromLocal;
+      }
+    }
+  }
+
+  // No boards found - this is normal for decks without board tracking
+  return null;
+}
+
+/**
+ * Loads the demo boards (legacy Barranquilla prototype).
+ *
+ * @returns BoardsManifest for the demo deck
+ * @throws Error if boards cannot be loaded
+ */
+export async function loadDemoBoards(): Promise<BoardsManifest | null> {
+  return loadBoardsForDeck("/decks/demo/manifest.json");
 }
 
 // ============================================================================

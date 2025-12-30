@@ -97,16 +97,14 @@ export function hostUIReducer(
     // ========================================
 
     case "TOGGLE_CONTROLS":
-      // ESC key toggles in paired mode (FR-023)
-      if (state.mode === "paired") {
-        return {
-          ...state,
-          controlsVisible: !state.controlsVisible,
-          controlsTemporary: false, // Toggle makes it permanent
-        };
-      }
-      // In standalone, controls are always visible
-      return state;
+      // Toggle controls visibility in any mode (FR-023)
+      // In paired mode: ESC/C toggles controls
+      // In standalone mode: C toggles controls (user preference)
+      return {
+        ...state,
+        controlsVisible: !state.controlsVisible,
+        controlsTemporary: false, // Toggle makes it permanent
+      };
 
     case "SHOW_CONTROLS":
       return {
@@ -273,10 +271,21 @@ export function useHostUIState() {
     };
   }, [state.controlsTemporary, store]);
 
-  // ESC key handler for control toggle (FR-023)
+  // 'C' key handler for control toggle (FR-023)
+  // Note: ESC is reserved by browsers to exit fullscreen mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === "c" || e.key === "C") {
         store.dispatch({ type: "TOGGLE_CONTROLS" });
       }
     };
